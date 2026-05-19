@@ -85,7 +85,7 @@ LLM_PROVIDER=openai  # ou gemini
 ## 📁 Estrutura do Projeto
 
 ```
-Ajuda Tech/
+ajudatech/
 ├── core/                   # App principal do Django
 │   ├── models.py           # Modelos: Sessão, Mensagem, Recomendação
 │   ├── views.py            # Views do chat e resultado
@@ -94,7 +94,7 @@ Ajuda Tech/
 │       └── ai_service.py   # Integração com a API de LLM
 ├── templates/              # Templates HTML
 ├── static/                 # CSS, JS, imagens
-├── Ajuda Tech/               # Configurações do projeto Django
+├── ajudatech/               # Configurações do projeto Django
 │   ├── settings.py
 │   └── urls.py
 ├── docs/                   # Documentação do projeto

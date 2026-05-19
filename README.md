@@ -45,7 +45,7 @@ Muitas pessoas têm dificuldade em escolher um computador porque não entendem a
 ```bash
 # 1. Clone o repositório
 git clone https://github.com/seu-usuario/Ajuda Tech.git
-cd Ajuda Tech
+cd ajudatech
 
 # 2. Crie e ative o ambiente virtual
 python -m venv venv

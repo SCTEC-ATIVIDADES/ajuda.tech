@@ -9,14 +9,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Intercepta chatApi antes de qualquer import — Vitest hoist automaticamente.
+// chatApp.js usa USE_MOCK=false, portanto postChat é sempre chamado em produção/testes.
 vi.mock('./chatApi.js', () => ({
-  CHAT_ENDPOINT: '/api/chat/send/',
-  postChat: vi.fn(),
+  CHAT_ENDPOINT: '/chat/send/',
+  postChat: vi.fn().mockResolvedValue({ reply: 'Resposta do assistente' }),
   postChatMock: vi.fn().mockResolvedValue({ reply: 'Resposta do assistente' }),
 }));
 
 import { initChatApp } from './chatApp.js';
-import { postChatMock } from './chatApi.js';
+import { postChat } from './chatApi.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ describe('mensagem vazia', () => {
     document.getElementById('chat-input').value = '';
     document.getElementById('chat-send').click();
 
-    expect(postChatMock).not.toHaveBeenCalled();
+    expect(postChat).not.toHaveBeenCalled();
   });
 });
 

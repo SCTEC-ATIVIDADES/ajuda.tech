@@ -1,4 +1,4 @@
-export const CHAT_ENDPOINT = 'http://127.0.0.1:8000/chat/send/';
+export const CHAT_ENDPOINT = '/chat/send/';
 
 const MOCK_RESPONSE =
   'Obrigado! Em breve conectaremos ao assistente. Por enquanto, continue me contando o que você precisa.';

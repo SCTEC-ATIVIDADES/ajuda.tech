@@ -14,6 +14,7 @@ describe('postChat', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: 'olá', session_id: 'session-123' }),
+      credentials: 'include',
     });
     expect(result).toEqual({ message: 'Resposta da IA' });
   });

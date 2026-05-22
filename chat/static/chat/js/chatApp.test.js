@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('./chatApi.js', () => ({
   CHAT_ENDPOINT: '/api/chat/send/',
   postChat: vi.fn(),
-  postChatMock: vi.fn().mockResolvedValue({ message: 'Resposta do assistente' }),
+  postChatMock: vi.fn().mockResolvedValue({ reply: 'Resposta do assistente' }),
 }));
 
 import { initChatApp } from './chatApp.js';

@@ -63,9 +63,10 @@ class TestSessionMessageLimit:
         assert "error" in data
         assert len(data["error"]) > 0
 
-    @pytest.mark.xfail(reason="limite de 50 msgs/sessão não implementado em views.py")
     @patch("chat.views.OpenRouterClient")
     def test_accepts_exactly_50_messages(self, MockClient, django_client):
+        # Comportamento positivo já implementado: 50 mensagens devem ser aceitas.
+        # Não é xfail — testa o limite superior permitido, não a rejeição.
         MockClient.return_value.chat_completion.return_value = "resposta"
 
         for i in range(50):
@@ -93,7 +94,9 @@ class TestHistoryWindowLimit:
 
     @pytest.mark.xfail(reason="janela de 20 msgs para LLM não implementada em services.py")
     @patch("chat.views.OpenRouterClient")
-    def test_history_window_uses_most_recent_messages(self, MockClient, django_client):
+    def test_history_window_excludes_oldest_messages(self, MockClient, django_client):
+        # Com janela de 20: ao enviar 25 mensagens, as primeiras 5 devem ser excluídas.
+        # Sem a janela implementada, todas as 25 chegam à LLM — o teste falha (xfail correto).
         mock_instance = MockClient.return_value
         mock_instance.chat_completion.return_value = "resposta"
 
@@ -101,8 +104,9 @@ class TestHistoryWindowLimit:
             _post_message(django_client, f"mensagem {i+1}")
 
         last_call_history = mock_instance.chat_completion.call_args[0][0]
-        last_message = last_call_history[-1]
-        assert "25" in last_message["content"]
+        contents = [m["content"] for m in last_call_history]
+        # A primeira mensagem ("mensagem 1") deve ter sido descartada pela janela
+        assert not any("mensagem 1" == c for c in contents)
 
 
 # ─── Rate limiting por sessão ─────────────────────────────────────────────────

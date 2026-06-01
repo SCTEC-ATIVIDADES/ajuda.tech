@@ -34,9 +34,11 @@ describe('renderMessages — casos de borda', () => {
     expect(container.textContent).toBe('segunda vez');
   });
 
-  it('renderiza uma única mensagem corretamente', () => {
+  it('renderiza uma única mensagem corretamente com content e botão de cópia', () => {
     renderMessages(container, [{ role: 'bot', text: 'só uma' }]);
     expect(container.querySelectorAll('.chat-message')).toHaveLength(1);
+    expect(container.querySelector('.chat-message-content')).not.toBeNull();
+    expect(container.querySelector('.chat-copy-btn')).not.toBeNull();
   });
 
   it('escapa HTML — não injeta tags maliciosas (prevenção de XSS)', () => {

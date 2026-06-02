@@ -8,28 +8,33 @@ Ajuda Tech é uma aplicação web com IA integrada que auxilia usuários leigos 
 
 ## 🎯 Objetivo
 
-Muitas pessoas têm dificuldade em escolher um computador porque não entendem as especificações técnicas. O Ajuda Tech resolve isso com uma conversa simples: o usuário descreve o que quer fazer com o computador e a IA recomenda a melhor opção.
+Muitas pessoas têm dificuldade em escolher um computador porque não entendem as especificações técnicas. O Ajuda Tech resolve isso com uma conversa simples: o usuário descreve o que quer fazer com o computador e o assistente **Herbert** recomenda a melhor opção — sem jargões técnicos.
 
 ---
 
 ## 🚀 Funcionalidades
 
-- Chat interativo com IA para coleta de necessidades do usuário
-- Recomendação personalizada de PC ou Notebook com base no perfil do usuário
+- Chat interativo com IA (Herbert) para coleta de necessidades do usuário
+- Recomendações em 3 categorias: **econômica**, **ideal** e **premium**
 - Explicações em linguagem simples, sem jargões técnicos
-- Histórico de conversas por sessão
-- Interface web responsiva e acessível
+- Histórico de conversa por sessão (sem necessidade de login ou cadastro)
+- Botão de copiar e compartilhar mensagens do assistente
+- Tema claro/escuro
+- Interface web responsiva (desktop e mobile)
 
 ---
 
-## 🛠️ Tecnologias (MVP)
+## 🛠️ Tecnologias
 
-| Camada         | Tecnologia                   |
-| -------------- | ---------------------------- |
-| Backend        | Python 3.12+                 |
-| Framework      | Django 5.x                   |
-| IA             | API de LLM (Open Router) |
-| Frontend       | Django Templates + HTML/CSS  |
+| Camada    | Tecnologia                                        |
+|-----------|---------------------------------------------------|
+| Backend   | Python 3.12+                                      |
+| Framework | Django 5.x                                        |
+| Banco     | SQLite com `django.contrib.sessions`              |
+| IA        | OpenRouter API (`requests`) — padrão: DeepSeek    |
+| Frontend  | Django Templates + HTML/CSS + módulos ES (JS)     |
+| Testes JS | Vitest                                            |
+| Testes PY | pytest + pytest-django                            |
 
 ---
 
@@ -38,27 +43,27 @@ Muitas pessoas têm dificuldade em escolher um computador porque não entendem a
 ### Pré-requisitos
 
 - Python 3.12 ou superior
-- pip
-- Chave de API do provedor de LLM (Open Router)
+- Node.js 18+ (para testes JavaScript)
+- Chave de API do [OpenRouter](https://openrouter.ai/keys)
 
 ### Passos
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/Ajuda Tech.git
-cd ajudatech
+git clone https://github.com/SCTECH-ATIVIDADES/ajuda.tech.git
+cd ajuda.tech
 
 # 2. Crie e ative o ambiente virtual
 python -m venv venv
 source venv/bin/activate  # Linux/macOS
 venv\Scripts\activate     # Windows
 
-# 3. Instale as dependências
+# 3. Instale as dependências Python
 pip install -r requirements.txt
 
 # 4. Configure as variáveis de ambiente
 cp .env.example .env
-# Edite o arquivo .env e adicione sua chave de API
+# Edite o .env com sua LLM_API_KEY e SECRET_KEY
 
 # 5. Aplique as migrações
 python manage.py migrate
@@ -69,15 +74,16 @@ python manage.py runserver
 
 Acesse em: `http://localhost:8000`
 
-### Front-end do chat (preview local, sem Django)
+### Testes
 
 ```bash
+# Testes Python
+pytest
+
+# Testes JavaScript
 npm install
 npm test
-npx serve chat/static/chat
 ```
-
-Abra a URL exibida (ex.: `http://localhost:3000`) para ver a página de chat com API mockada.
 
 ---
 
@@ -87,8 +93,13 @@ Abra a URL exibida (ex.: `http://localhost:3000`) para ver a página de chat com
 SECRET_KEY=sua_chave_secreta_django
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
-LLM_API_KEY=sua_chave_de_api_da_ia
-LLM_PROVIDER=openrouter  # ou openrouter
+LLM_API_KEY=sua_chave_openrouter
+LLM_PROVIDER=openai
+LLM_MODEL=deepseek/deepseek-v4-flash:free
+LLM_TIMEOUT=30
+SITE_URL=http://localhost:8000
+SITE_NAME=Ajuda Tech
+LOG_LEVEL=INFO
 ```
 
 ---
@@ -96,22 +107,28 @@ LLM_PROVIDER=openrouter  # ou openrouter
 ## 📁 Estrutura do Projeto
 
 ```
-ajudatech/
-├── core/                   # App principal do Django
-│   ├── models.py           # Modelos: Sessão, Mensagem, Recomendação
-│   ├── views.py            # Views do chat e resultado
+ajuda.tech/
+├── ajuda_tech/              # Configurações Django (settings, urls, wsgi)
+├── core/                    # App da landing page
+│   ├── views.py
 │   ├── urls.py
-│   └── services/
-│       └── ai_service.py   # Integração com a API de LLM
-├── templates/              # Templates HTML
-├── static/                 # CSS, JS, imagens
-├── ajudatech/               # Configurações do projeto Django
-│   ├── settings.py
-│   └── urls.py
-├── docs/                   # Documentação do projeto
+│   └── templates/core/
+├── chat/                    # App principal do assistente Herbert
+│   ├── views.py             # ChatView, SendMessageView, RecommendView
+│   ├── services.py          # OpenRouterClient — integração com a API de LLM
+│   ├── prompts.py           # System prompts isolados
+│   ├── exceptions.py        # Hierarquia de exceções customizadas
+│   ├── models.py            # Conversation, Message
+│   ├── urls.py
+│   ├── tests/               # Testes Python (pytest-django)
+│   ├── templates/chat/
+│   └── static/chat/
+│       ├── css/chat.css
+│       └── js/              # chatApi.js, chatApp.js, chatUi.js, chatState.js, chatTheme.js
+├── docs/                    # PRD, User Stories, Diagramas
 ├── manage.py
 ├── requirements.txt
-├── .env.example
+├── package.json
 └── README.md
 ```
 

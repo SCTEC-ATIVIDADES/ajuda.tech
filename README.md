@@ -50,8 +50,16 @@ cd ajuda.tech-wagner
 
 # 2. Crie e ative o ambiente virtual
 python -m venv venv
-source venv/bin/activate  # Linux/macOS
-venv\Scripts\activate   # Windows
+
+# Ativar o ambiente virtual
+# No Linux/macOS:
+source venv/bin/activate
+
+# No Windows (PowerShell):
+venv\Scripts\Activate.ps1
+
+# No Windows (cmd.exe):
+venv\Scripts\activate.bat
 
 # 3. Instale as dependências
 # Recomendação: utilize o gerenciador de pacotes pip via python -m pip
@@ -63,15 +71,24 @@ python -m pip install -r requirements.txt
 # 5. Aplique as migrações
 python manage.py migrate
 
-# 6. Execute testes (opcional)
-# No Windows, use o Python do venv caso o comando `pytest` não seja encontrado:
-python -m pytest
-
-# 7. Inicie o servidor de desenvolvimento
+# 6. Inicie o servidor de desenvolvimento
 python manage.py runserver
 ```
 
 Acesse em: `http://localhost:8000`
+
+### Executar Testes (opcional)
+
+```bash
+# Com o ambiente virtual ativado (veja passo 2 acima), execute:
+python -m pytest
+
+# Para testes com saída detalhada:
+python -m pytest -v
+
+# Para testes com cobertura de código:
+python -m pytest --cov=chat --cov-report=term-missing
+```
 
 ### Front-end do chat (preview local, sem Django)
 

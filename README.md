@@ -64,7 +64,8 @@ python -m pip install -r requirements.txt
 python manage.py migrate
 
 # 6. Execute testes (opcional)
-pytest
+# No Windows, use o Python do venv caso o comando `pytest` não seja encontrado:
+python -m pytest
 
 # 7. Inicie o servidor de desenvolvimento
 python manage.py runserver

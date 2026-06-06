@@ -307,7 +307,7 @@ class OpenRouterClient:
             Se nenhum array JSON válido for encontrado.
         """
         # 1. Tenta remover bloco de código Markdown
-        markdown_match = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", content, re.DOTALL)
+        markdown_match = re.search(r"```(?:json)?\s*(\[[^\]]*\])\s*```", content, re.DOTALL)
         if markdown_match:
             candidate = markdown_match.group(1)
         else:

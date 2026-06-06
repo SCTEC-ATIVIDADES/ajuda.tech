@@ -50,45 +50,45 @@ class TestSendMessageView:
         )
 
     @patch("chat.views.OpenRouterClient")
-    def test_returns_200_on_success(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "Ótima escolha!"
+    def test_returns_200_on_success(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "Ótima escolha!"
         response = self._post(django_client, {"message": "Preciso de um notebook"})
         assert response.status_code == 200
 
     @patch("chat.views.OpenRouterClient")
-    def test_response_is_json(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "Ok!"
+    def test_response_is_json(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "Ok!"
         response = self._post(django_client, {"message": "teste"})
         assert response["Content-Type"] == "application/json"
         data = json.loads(response.content)
         assert isinstance(data, dict)
 
     @patch("chat.views.OpenRouterClient")
-    def test_response_contains_reply_key(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "Resposta aqui"
+    def test_response_contains_reply_key(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "Resposta aqui"
         response = self._post(django_client, {"message": "teste"})
         data = json.loads(response.content)
         assert "reply" in data
 
     @patch("chat.views.OpenRouterClient")
-    def test_reply_matches_service_return_value(self, MockClient, django_client):
+    def test_reply_matches_service_return_value(self, mock_client, django_client):
         expected = "Recomendo um notebook Dell"
-        MockClient.return_value.chat_completion.return_value = expected
+        mock_client.return_value.chat_completion.return_value = expected
         response = self._post(django_client, {"message": "teste"})
         data = json.loads(response.content)
         assert data["reply"] == expected
 
     @patch("chat.views.OpenRouterClient")
-    def test_saves_user_message_to_session(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "ok"
+    def test_saves_user_message_to_session(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "ok"
         self._post(django_client, {"message": "mensagem do usuário"})
         history = django_client.session.get("chat_history", [])
         assert any(m["role"] == "user" and m["content"] == "mensagem do usuário" for m in history)
 
     @patch("chat.views.OpenRouterClient")
-    def test_saves_assistant_reply_to_session(self, MockClient, django_client):
+    def test_saves_assistant_reply_to_session(self, mock_client, django_client):
         ai_reply = "Resposta da IA salva"
-        MockClient.return_value.chat_completion.return_value = ai_reply
+        mock_client.return_value.chat_completion.return_value = ai_reply
         self._post(django_client, {"message": "pergunta"})
         history = django_client.session.get("chat_history", [])
         assert any(m["role"] == "assistant" and m["content"] == ai_reply for m in history)
@@ -106,16 +106,16 @@ class TestSendMessageView:
         assert response.status_code == 405
 
     @patch("chat.views.OpenRouterClient")
-    def test_returns_503_when_service_unavailable(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.side_effect = ServiceUnavailableError(
+    def test_returns_503_when_service_unavailable(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.side_effect = ServiceUnavailableError(
             "serviço indisponível"
         )
         response = self._post(django_client, {"message": "teste"})
         assert response.status_code == 503
 
     @patch("chat.views.OpenRouterClient")
-    def test_returns_500_when_authentication_fails(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.side_effect = AuthenticationError(
+    def test_returns_500_when_authentication_fails(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.side_effect = AuthenticationError(
             "chave inválida"
         )
         response = self._post(django_client, {"message": "teste"})
@@ -162,21 +162,21 @@ class TestRecommendView:
         )
 
     @patch("chat.views.OpenRouterClient")
-    def test_returns_200_on_success(self, MockClient, django_client):
-        MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+    def test_returns_200_on_success(self, mock_client, django_client):
+        mock_client.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
         response = self._post(django_client, {})
         assert response.status_code == 200
 
     @patch("chat.views.OpenRouterClient")
-    def test_response_contains_products_key(self, MockClient, django_client):
-        MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+    def test_response_contains_products_key(self, mock_client, django_client):
+        mock_client.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
         response = self._post(django_client, {})
         data = json.loads(response.content)
         assert "products" in data
 
     @patch("chat.views.OpenRouterClient")
-    def test_products_list_has_three_items(self, MockClient, django_client):
-        MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+    def test_products_list_has_three_items(self, mock_client, django_client):
+        mock_client.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
         response = self._post(django_client, {})
         data = json.loads(response.content)
         assert len(data["products"]) == 3
@@ -188,8 +188,8 @@ class TestRecommendView:
         assert response.status_code == 200
 
     @patch("chat.views.OpenRouterClient")
-    def test_returns_503_when_service_unavailable(self, MockClient, django_client):
-        MockClient.return_value.get_product_recommendations.side_effect = (
+    def test_returns_503_when_service_unavailable(self, mock_client, django_client):
+        mock_client.return_value.get_product_recommendations.side_effect = (
             ServiceUnavailableError("fora do ar")
         )
         response = self._post(django_client, {})

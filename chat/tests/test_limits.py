@@ -41,8 +41,8 @@ class TestSessionMessageLimit:
 
     @pytest.mark.xfail(reason="limite de 50 msgs/sessão não implementado em views.py")
     @patch("chat.views.OpenRouterClient")
-    def test_rejects_message_after_50_exchanges(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "resposta"
+    def test_rejects_message_after_50_exchanges(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "resposta"
 
         for _ in range(50):
             _post_message(django_client)
@@ -52,8 +52,8 @@ class TestSessionMessageLimit:
 
     @pytest.mark.xfail(reason="limite de 50 msgs/sessão não implementado em views.py")
     @patch("chat.views.OpenRouterClient")
-    def test_error_message_is_user_friendly_on_limit(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "resposta"
+    def test_error_message_is_user_friendly_on_limit(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "resposta"
 
         for _ in range(50):
             _post_message(django_client)
@@ -64,10 +64,10 @@ class TestSessionMessageLimit:
         assert len(data["error"]) > 0
 
     @patch("chat.views.OpenRouterClient")
-    def test_accepts_exactly_50_messages(self, MockClient, django_client):
+    def test_accepts_exactly_50_messages(self, mock_client, django_client):
         # Comportamento positivo já implementado: 50 mensagens devem ser aceitas.
         # Não é xfail — testa o limite superior permitido, não a rejeição.
-        MockClient.return_value.chat_completion.return_value = "resposta"
+        mock_client.return_value.chat_completion.return_value = "resposta"
 
         for i in range(50):
             response = _post_message(django_client, f"mensagem {i+1}")
@@ -82,8 +82,8 @@ class TestHistoryWindowLimit:
 
     @pytest.mark.xfail(reason="janela de 20 msgs para LLM não implementada em services.py")
     @patch("chat.views.OpenRouterClient")
-    def test_sends_at_most_20_messages_to_llm(self, MockClient, django_client):
-        mock_instance = MockClient.return_value
+    def test_sends_at_most_20_messages_to_llm(self, mock_client, django_client):
+        mock_instance = mock_client.return_value
         mock_instance.chat_completion.return_value = "resposta"
 
         for i in range(25):
@@ -94,10 +94,10 @@ class TestHistoryWindowLimit:
 
     @pytest.mark.xfail(reason="janela de 20 msgs para LLM não implementada em services.py")
     @patch("chat.views.OpenRouterClient")
-    def test_history_window_excludes_oldest_messages(self, MockClient, django_client):
+    def test_history_window_excludes_oldest_messages(self, mock_client, django_client):
         # Com janela de 20: ao enviar 25 mensagens, as primeiras 5 devem ser excluídas.
         # Sem a janela implementada, todas as 25 chegam à LLM — o teste falha (xfail correto).
-        mock_instance = MockClient.return_value
+        mock_instance = mock_client.return_value
         mock_instance.chat_completion.return_value = "resposta"
 
         for i in range(25):
@@ -117,8 +117,8 @@ class TestRateLimiting:
 
     @pytest.mark.xfail(reason="rate limiting de 10 msgs/min não implementado")
     @patch("chat.views.OpenRouterClient")
-    def test_rejects_11th_message_within_one_minute(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "resposta"
+    def test_rejects_11th_message_within_one_minute(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "resposta"
 
         for _ in range(10):
             _post_message(django_client)
@@ -128,8 +128,8 @@ class TestRateLimiting:
 
     @pytest.mark.xfail(reason="rate limiting de 10 msgs/min não implementado")
     @patch("chat.views.OpenRouterClient")
-    def test_rate_limit_error_body_is_informative(self, MockClient, django_client):
-        MockClient.return_value.chat_completion.return_value = "resposta"
+    def test_rate_limit_error_body_is_informative(self, mock_client, django_client):
+        mock_client.return_value.chat_completion.return_value = "resposta"
 
         for _ in range(10):
             _post_message(django_client)

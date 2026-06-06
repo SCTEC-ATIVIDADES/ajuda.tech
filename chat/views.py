@@ -65,8 +65,8 @@ class SendMessageView(View):
         try:
             client = OpenRouterClient()
             reply = client.chat_completion(history)
-        except AuthenticationError as exc:
-            logger.error("Falha de autenticação com OpenRouter: %s", exc)
+        except AuthenticationError:
+            logger.exception("Falha de autenticação com OpenRouter")
             return JsonResponse(
                 {"error": "Erro de configuração do serviço de IA."}, status=500
             )
@@ -123,8 +123,8 @@ class RecommendView(View):
             return JsonResponse(
                 {"error": "Serviço temporariamente indisponível."}, status=503
             )
-        except (AuthenticationError, InvalidResponseError, RateLimitError) as exc:
-            logger.error("Erro ao gerar recomendações: %s", exc)
+        except (AuthenticationError, InvalidResponseError, RateLimitError):
+            logger.exception("Erro ao gerar recomendações")
             return JsonResponse({"error": "Não foi possível gerar recomendações."}, status=503)
 
         return JsonResponse({"products": products})

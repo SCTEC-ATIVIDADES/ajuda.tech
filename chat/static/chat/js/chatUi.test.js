@@ -39,7 +39,7 @@ describe('chatUi', () => {
     expect(items).toHaveLength(2);
     expect(items[0].classList.contains('chat-message--bot')).toBe(true);
     expect(items[1].classList.contains('chat-message--user')).toBe(true);
-    expect(items[0].textContent).toBe('Olá');
+    expect(items[0].querySelector('.chat-message-content').textContent).toBe('Olá');
     expect(items[1].textContent).toBe('Oi');
   });
 
@@ -101,10 +101,40 @@ describe('chatUi', () => {
       { role: 'user', text: '<b>usuário</b>' },
     ], parseMarkdown);
     const items = container.querySelectorAll('.chat-message');
-    // Bot: innerHTML definido pelo parseMarkdown
-    expect(items[0].innerHTML).toBe('<p>Resposta</p>');
+    // Bot: innerHTML do content definido pelo parseMarkdown
+    expect(items[0].querySelector('.chat-message-content').innerHTML).toBe('<p>Resposta</p>');
     // Usuário: textContent escapado (sem HTML)
     expect(items[1].innerHTML).toBe('&lt;b&gt;usuário&lt;/b&gt;');
+  });
+
+  it('bot messages have a copy button', () => {
+    renderMessages(container, [{ role: 'bot', text: 'Texto' }]);
+    const copyBtn = container.querySelector('.chat-copy-btn');
+    expect(copyBtn).not.toBeNull();
+    expect(copyBtn.getAttribute('aria-label')).toBe('Copiar mensagem');
+  });
+
+  it('copy button writes to clipboard and shows copied state', async () => {
+    const written = [];
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: (text) => { written.push(text); return Promise.resolve(); } },
+      configurable: true,
+    });
+
+    renderMessages(container, [{ role: 'bot', text: 'Copiar isso' }]);
+    const copyBtn = container.querySelector('.chat-copy-btn');
+    await copyBtn.dispatchEvent(new Event('click'));
+    // aguarda a Promise do clipboard
+    await Promise.resolve();
+
+    expect(written[0]).toBe('Copiar isso');
+    expect(copyBtn.getAttribute('aria-label')).toBe('Copiado!');
+    expect(copyBtn.classList.contains('chat-copy-btn--copied')).toBe(true);
+  });
+
+  it('user messages do not have a copy button', () => {
+    renderMessages(container, [{ role: 'user', text: 'Oi' }]);
+    expect(container.querySelector('.chat-copy-btn')).toBeNull();
   });
 
   it('showError displays text and clears with clearError', () => {

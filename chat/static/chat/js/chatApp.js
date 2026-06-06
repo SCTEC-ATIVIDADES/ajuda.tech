@@ -7,6 +7,15 @@ import {
   resetConversation,
 } from './chatState.js';
 import { postChat, postChatMock } from './chatApi.js';
+import {
+  renderMessages,
+  showError,
+  clearError,
+  setTypingVisible,
+  setSendDisabled,
+  setInputDisabled,
+} from './chatUi.js';
+import { initTheme } from './chatTheme.js';
 
 marked.use({ gfm: true, breaks: true });
 
@@ -18,15 +27,6 @@ function parseMarkdown(text) {
     .replace(/([^*]\*{1,3})(\w)/g, '$1 $2');
   return DOMPurify.sanitize(marked.parse(normalized));
 }
-import {
-  renderMessages,
-  showError,
-  clearError,
-  setTypingVisible,
-  setSendDisabled,
-  setInputDisabled,
-} from './chatUi.js';
-import { initTheme } from './chatTheme.js';
 
 const USE_MOCK = false;
 

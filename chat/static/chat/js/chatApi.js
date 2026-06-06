@@ -39,13 +39,17 @@ export async function postChat(message, sessionId, { fetchFn = fetch } = {}) {
 
   if (!response.ok) {
     let errorMsg = 'Falha ao enviar mensagem';
+    let failedMessage = null;
     try {
       const errorData = await response.json();
       if (errorData.error) errorMsg = errorData.error;
+      if (errorData.failed_message) failedMessage = errorData.failed_message;
     } catch (_) {
       // ignora erros de parse — usa mensagem genérica
     }
-    throw new Error(errorMsg);
+    const err = new Error(errorMsg);
+    if (failedMessage) err.failedMessage = failedMessage;
+    throw err;
   }
 
   return response.json();

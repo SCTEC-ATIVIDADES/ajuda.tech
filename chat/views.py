@@ -73,16 +73,27 @@ class SendMessageView(View):
         except ServiceUnavailableError as exc:
             logger.warning("OpenRouter indisponível: %s", exc)
             return JsonResponse(
-                {"error": "Serviço de IA temporariamente indisponível. Tente novamente."}, status=503
+                {
+                    "error": "Serviço de IA temporariamente indisponível. Tente novamente.",
+                    "failed_message": message,
+                },
+                status=503,
             )
         except RateLimitError as exc:
             logger.warning("Erro ao processar resposta: %s", exc)
             return JsonResponse(
-                {"error": "Muitas requisições. Aguarde alguns segundos e tente novamente."}, status=429
+                {
+                    "error": "Muitas requisições. Aguarde alguns segundos e tente novamente.",
+                    "failed_message": message,
+                },
+                status=429,
             )
         except InvalidResponseError as exc:
             logger.warning("Erro ao processar resposta: %s", exc)
-            return JsonResponse({"error": "Não foi possível processar a resposta."}, status=503)
+            return JsonResponse(
+                {"error": "Não foi possível processar a resposta.", "failed_message": message},
+                status=503,
+            )
 
         # 5. Adiciona resposta do assistente e salva na sessão (limite 50 msgs)
         history.append({"role": "assistant", "content": reply})

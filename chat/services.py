@@ -41,6 +41,8 @@ _DEFAULT_TIMEOUT = 60
 _DEFAULT_MAX_RETRIES = 2
 _DEFAULT_MAX_RATE_LIMIT_RETRIES = 10
 _RETRYABLE_STATUS_CODES = frozenset({500, 502, 503, 504})
+_MAX_CHAT_TOKENS = 800
+_MAX_EXTRACTION_TOKENS = 1500
 
 
 class OpenRouterClient:
@@ -55,7 +57,12 @@ class OpenRouterClient:
         Número máximo de tentativas após a primeira falha.
     """
 
-    def __init__(self, api_key: str | None = None, max_retries: int = _DEFAULT_MAX_RETRIES, max_rate_limit_retries: int = _DEFAULT_MAX_RATE_LIMIT_RETRIES):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        max_retries: int = _DEFAULT_MAX_RETRIES,
+        max_rate_limit_retries: int = _DEFAULT_MAX_RATE_LIMIT_RETRIES,
+    ):
         if api_key:
             self.api_key = api_key
         else:
@@ -123,7 +130,7 @@ class OpenRouterClient:
             Se a IA não retornar um array JSON válido.
         """
         messages = self._build_extraction_messages(history)
-        content = self._chat_completion(messages)
+        content = self._chat_completion(messages, is_extraction=True)
         return self._parse_products(content)
 
     # ─── Private helpers ──────────────────────────────────────────────────────
@@ -143,84 +150,75 @@ class OpenRouterClient:
             + [{"role": "user", "content": PRODUCT_EXTRACTION_PROMPT}]
         )
 
-    def _chat_completion(self, messages: list[dict]) -> str:
-        """Executa a chamada HTTP com retry e retorna o conteúdo da resposta."""
-        attempt = 0
-        rate_limit_attempt = 0
+    def _build_payload(self, messages: list[dict], max_tokens: int) -> dict:
+        return {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.7,
+            "include_reasoning": False,
+        }
+
+    def _backoff_sleep(self, attempt: int) -> None:
+        time.sleep(2 ** attempt)
+
+    def _chat_completion(self, messages: list[dict], *, is_extraction: bool = False) -> str:
+        """Monta o payload e delega a execução com retry."""
+        max_tokens = _MAX_EXTRACTION_TOKENS if is_extraction else _MAX_CHAT_TOKENS
+        payload = self._build_payload(messages, max_tokens)
+        return self._execute_with_rate_limit_retry(payload)
+
+    def _execute_with_rate_limit_retry(self, payload: dict) -> str:
+        """Envolve a chamada com retry específico para 429 (contador separado)."""
+        for attempt in range(self.max_rate_limit_retries + 1):
+            try:
+                return self._execute_with_backoff_retry(payload)
+            except RateLimitError as exc:
+                if attempt == self.max_rate_limit_retries:
+                    raise
+                logger.warning(
+                    "Rate limit atingido (429) — tentativa %d/%d. Aguardando %ds.",
+                    attempt + 1,
+                    self.max_rate_limit_retries,
+                    exc.retry_after,
+                )
+                time.sleep(exc.retry_after)
+        raise ServiceUnavailableError("Rate limit excedido após todas as tentativas.")  # pragma: no cover
+
+    def _execute_with_backoff_retry(self, payload: dict) -> str:
+        """Executa a chamada HTTP com retry exponencial para falhas transitórias (5xx, timeout, conexão)."""
         last_exc: Exception | None = None
 
-        while attempt <= self.max_retries:
+        for attempt in range(self.max_retries + 1):
             try:
-                is_extraction = any(
-                    PRODUCT_EXTRACTION_PROMPT[:50] in m.get("content", "")
-                    for m in messages
-                )
-                max_tokens = 1500 if is_extraction else 800
                 response = requests.post(
                     _OPENROUTER_URL,
                     headers=self._build_headers(),
-                    data=json.dumps({
-                        "model": self.model,
-                        "messages": messages,
-                        "max_tokens": max_tokens,
-                        "temperature": 0.7,
-                        "include_reasoning": False,
-                    }),
+                    data=json.dumps(payload),
                     timeout=self.timeout,
                 )
                 return self._handle_response(response)
 
-            except (ServiceUnavailableError,) as exc:
-                last_exc = exc
-                if attempt < self.max_retries:
-                    wait = 2**attempt  # 1s, 2s, 4s …
-                    logger.warning(
-                        "OpenRouter indisponível (tentativa %d/%d). Aguardando %ds.",
-                        attempt + 1,
-                        self.max_retries + 1,
-                        wait,
-                    )
-                    time.sleep(wait)
-                attempt += 1
-
-            except (AuthenticationError, InvalidResponseError):
+            except (AuthenticationError, InvalidResponseError, RateLimitError):
                 raise  # sem retry para erros permanentes
 
-            except RateLimitError as exc:
-                rate_limit_attempt += 1
+            except ServiceUnavailableError as exc:
                 last_exc = exc
-                if rate_limit_attempt <= self.max_rate_limit_retries:
-                    wait = exc.retry_after
-                    logger.warning(
-                        "Rate limit atingido (429) — tentativa %d/%d. Aguardando %ds.",
-                        rate_limit_attempt,
-                        self.max_rate_limit_retries,
-                        wait,
-                    )
-                    time.sleep(wait)
-                    # Não incrementa `attempt`: 429 tem contador próprio
-                else:
-                    raise
 
             except requests.exceptions.Timeout as exc:
                 last_exc = ServiceUnavailableError(f"Timeout após {self.timeout}s: {exc}")
-                if attempt < self.max_retries:
-                    wait = 2**attempt
-                    logger.warning(
-                        "Timeout na tentativa %d/%d. Aguardando %ds.",
-                        attempt + 1,
-                        self.max_retries + 1,
-                        wait,
-                    )
-                    time.sleep(wait)
-                attempt += 1
 
             except requests.exceptions.ConnectionError as exc:
                 last_exc = ServiceUnavailableError(f"Erro de conexão: {exc}")
-                if attempt < self.max_retries:
-                    wait = 2**attempt
-                    time.sleep(wait)
-                attempt += 1
+
+            if attempt < self.max_retries:
+                logger.warning(
+                    "Falha transitória (tentativa %d/%d). Aguardando %ds.",
+                    attempt + 1,
+                    self.max_retries + 1,
+                    2 ** attempt,
+                )
+                self._backoff_sleep(attempt)
 
         raise last_exc  # type: ignore[misc]
 
@@ -306,12 +304,10 @@ class OpenRouterClient:
         InvalidResponseError
             Se nenhum array JSON válido for encontrado.
         """
-        # 1. Tenta remover bloco de código Markdown
         markdown_match = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", content, re.DOTALL)
         if markdown_match:
             candidate = markdown_match.group(1)
         else:
-            # 2. Localiza o primeiro '[' e tenta parsear a partir daí
             bracket_pos = content.find("[")
             if bracket_pos == -1:
                 raise InvalidResponseError(

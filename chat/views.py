@@ -23,6 +23,8 @@ from chat.services import OpenRouterClient
 
 logger = logging.getLogger(__name__)
 
+_MAX_HISTORY_SIZE = 50
+
 
 class ChatView(TemplateView):
     """Renderiza a página de chat e garante que a sessão exista."""
@@ -44,27 +46,31 @@ class SendMessageView(View):
 
     http_method_names = ["post"]
 
-    def post(self, request):
-        # 1. Parse e validação do body
+    def _get_client(self) -> OpenRouterClient:
+        return OpenRouterClient()
+
+    def _parse_message_body(self, request) -> tuple[str | None, JsonResponse | None]:
         try:
             body = json.loads(request.body)
         except (json.JSONDecodeError, UnicodeDecodeError):
-            return JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
+            return None, JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
 
         message = body.get("message", "").strip()
         if not message:
-            return JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
+            return None, JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
 
-        # 2. Recupera histórico da sessão
+        return message, None
+
+    def post(self, request):
+        message, error = self._parse_message_body(request)
+        if error:
+            return error
+
         history = request.session.get("chat_history", [])
-
-        # 3. Adiciona mensagem do usuário ao histórico (em memória/sessão)
         history.append({"role": "user", "content": message})
 
-        # 4. Chama o serviço de IA
         try:
-            client = OpenRouterClient()
-            reply = client.chat_completion(history)
+            reply = self._get_client().chat_completion(history)
         except AuthenticationError as exc:
             logger.error("Falha de autenticação com OpenRouter: %s", exc)
             return JsonResponse(
@@ -95,9 +101,8 @@ class SendMessageView(View):
                 status=503,
             )
 
-        # 5. Adiciona resposta do assistente e salva na sessão (limite 50 msgs)
         history.append({"role": "assistant", "content": reply})
-        request.session["chat_history"] = history[-50:]
+        request.session["chat_history"] = history[-_MAX_HISTORY_SIZE:]
 
         return JsonResponse({"reply": reply})
 
@@ -111,13 +116,14 @@ class RecommendView(View):
 
     http_method_names = ["post"]
 
+    def _get_client(self) -> OpenRouterClient:
+        return OpenRouterClient()
+
     def post(self, request):
-        # Recupera histórico da conversa da sessão atual
         history = request.session.get("chat_history", [])
 
         try:
-            client = OpenRouterClient()
-            products = client.get_product_recommendations(history)
+            products = self._get_client().get_product_recommendations(history)
         except ServiceUnavailableError as exc:
             logger.warning("OpenRouter indisponível ao gerar recomendações: %s", exc)
             return JsonResponse(

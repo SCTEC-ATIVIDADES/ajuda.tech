@@ -1,5 +1,20 @@
 # 💻 Ajuda Tech — Assistente Inteligente para Compra de Computadores
 
+Segue nosso trabalho do Grupo 10 / 12
+
+Wagner Sousa
+Rafael Santos
+Rafael 
+Gisele Tavares
+Luan Rodrigues
+
+Apresentação:
+
+https://gamma.app/docs/Untitled-gqu51wdlkr5cbnw?mode=doc
+
+Repositório:
+https://github.com/SCTECH-ATIVIDADES/ajuda.tech
+
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.x-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM_API-412991?style=for-the-badge)

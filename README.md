@@ -9,7 +9,7 @@
 
 > Ajuda Tech é uma aplicação web com IA integrada que ajuda usuários leigos a encontrarem o computador ideal de acordo com sua necessidade e orçamento, sem exigir conhecimento técnico.
 
-![ajudatech-ai](https://github.com/user-attachments/assets/d6c5d397-0ccb-4011-bda1-3ea6eec01aac)
+<img width="1079" height="821" alt="image" src="https://github.com/user-attachments/assets/b5b4b107-5f0e-4838-ba09-a8de4c43bdda" />
 
 ---
 

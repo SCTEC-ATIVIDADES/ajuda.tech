@@ -17,6 +17,14 @@
 
 Muitas pessoas têm dificuldade em escolher um computador porque não entendem as especificações técnicas. O Ajuda Tech resolve isso com uma conversa simples: o usuário descreve o que quer fazer com o computador e a IA recomenda a melhor opção.
 
+URL do Board 1:
+https://github.com/orgs/SCTECH-ATIVIDADES/projects/1
+
+URL do Board 2 (fork):
+https://github.com/users/wagner-sousa/projects/4/views/1
+
+Obs: fizemos um fork para separar as fases do projeto mas a separação ficou por data mesmo. A partir do dia 22/05 começamos a trabalhar na Fase 2.
+
 ### Funcionalidades
 
 - Chat interativo com IA para coleta de necessidades do usuário
@@ -48,14 +56,24 @@ git clone https://github.com/SCTECH-ATIVIDADES/ajuda.tech.git
 cd ajuda.tech
 ```
 
-#### Crie e ative o ambiente virtual
+# Este projeto utiliza a IDE VSCode com extensão de Dev Containers para facilitar o setup
+Dev Containers 0.459.1 in VS Code 1.123.0 
+
+## Crie um container Docker com extensão no VSCode 
+Instalar a extensão Dev Containers  e ativar no projeto antes de criar o ambiente virtual, para evitar conflitos de dependências. Façpa manualmente ou peça para sua IA assistente criar o container e abrir o projeto dentro dele. O container já tem Python 3.12 e Node.js pré-instalados, além de configurar o ambiente virtual e instalar as dependências automaticamente.
+
+### Crie e ative o ambiente virtual no docker 
 
 ```bash
 python -m venv venv
-source venv/bin/activate
 ```
 
 No Windows:
+
+```bash
+python -m venv venv
+```
+Depois:
 
 ```bash
 venv\Scripts\activate
@@ -73,13 +91,8 @@ python -m pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Depois, edite o arquivo `.env` com os valores do seu ambiente.
+Depois, edite o arquivo `.env` com os valores do seu ambiente e chave da sua LLM escolhida.
 
-#### Aplique as migrações
-
-```bash
-python manage.py migrate
-```
 
 #### Inicie o servidor de desenvolvimento
 
@@ -140,6 +153,11 @@ O token usado em `LLM_API_KEY` deve ser gerado na sua conta em [OpenRouter](http
 ---
 
 ## 🧪 Testes
+Atualize as depedências e rode os testes com:
+
+```bash
+npm install
+```
 
 ### Backend
 

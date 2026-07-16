@@ -4,6 +4,8 @@
 
 ### Prompt 1 — Análise Inicial do Projeto
 
+**Data:** 16/07/2026
+
 ```markdown
 analise o projeto de trabalho ajuda tech, é um trabalho de um curso.
 após análise, precisamos sugerir idéias simples para evoluer com ele
@@ -21,6 +23,8 @@ usando LangGraph. Talvez utilisar um novo agente para isso. Pode me ajudar?
 ---
 
 ### Prompt 2 — Requisitos do Módulo 2
+
+**Data:** 16/07/2026
 
 ```markdown
 Ou te dar mais detalhes do modulo 2 desse trabalho:
@@ -68,6 +72,8 @@ IMPLEMENTAÇÃO COM LANGGRAPH, FERRAMENTA E CONTEXTO
 ---
 
 ### Prompt 3 — Ajuste: Remover Pagamentos
+
+**Data:** 16/07/2026
 
 ```markdown
 Uma unica alteração no plano, é que não vamos implementar pagamentos.

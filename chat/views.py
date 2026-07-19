@@ -165,8 +165,10 @@ class AgentSendMessageView(View):
         try:
             from chat.agent.graph import agent_graph
 
+            messages = history[-_MAX_HISTORY_SIZE:]
+
             initial_state = {
-                "messages": [{"role": "user", "content": message}],
+                "messages": messages,
                 "user_needs": request.session.get("user_needs", {}),
                 "products_found": [],
                 "stage": "",
@@ -179,7 +181,10 @@ class AgentSendMessageView(View):
 
             reply = ""
             for msg in reversed(result.get("messages", [])):
-                content = msg.get("content", "") if isinstance(msg, dict) else ""
+                if isinstance(msg, dict):
+                    content = msg.get("content", "")
+                else:
+                    content = getattr(msg, "content", "")
                 if content:
                     reply = content
                     break

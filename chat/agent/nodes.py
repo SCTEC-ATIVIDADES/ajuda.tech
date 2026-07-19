@@ -29,7 +29,10 @@ def classify_msg(state: AgentState) -> dict:
     Determina se é: saudacao, pergunta, dados, recomendacao.
     """
     last_message = state["messages"][-1]
-    user_text = last_message.content if hasattr(last_message, "content") else str(last_message)
+    if isinstance(last_message, dict):
+        user_text = last_message.get("content", "")
+    else:
+        user_text = getattr(last_message, "content", str(last_message))
 
     prompt = f"""Classifique a mensagem do usuário em UMA das categorias abaixo:
 - saudacao: cumprimentos, "oi", "olá", "bom dia", etc.
@@ -72,8 +75,13 @@ def gather_needs(state: AgentState) -> dict:
     """Nó de coleta — extrai necessidades do usuário a partir da conversa."""
     history = []
     for msg in state["messages"]:
-        role = "user" if hasattr(msg, "type") and msg.type == "human" else "assistant"
-        content = msg.content if hasattr(msg, "content") else str(msg)
+        if isinstance(msg, dict):
+            role = msg.get("role", "assistant")
+            content = msg.get("content", "")
+        else:
+            msg_type = getattr(msg, "type", None)
+            role = "user" if msg_type in {"human", "user"} else "assistant"
+            content = getattr(msg, "content", str(msg))
         history.append({"role": role, "content": content})
 
     current_needs = state.get("user_needs", {})
@@ -160,9 +168,12 @@ def recommend(state: AgentState) -> dict:
     """Nó de recomendação — busca produtos e gera recomendação."""
     needs = state.get("user_needs", {})
     proposito = needs.get("proposito", "uso geral")
-    orcamento = needs.get("orcamento", 5000)
-    mobilidade = needs.get("mobilidade", "media")
-
+    orcamento_raw = needs.get("orcamento", 5000)
+    try:
+        orcamento = float(orcamento_raw)
+    except (TypeError, ValueError):
+        orcamento = 5000.0
+    mobilidade = str(needs.get("mobilidade", "media")).lower()
     if mobilidade == "alta":
         categoria = "notebook"
     elif mobilidade == "baixa":
@@ -237,9 +248,25 @@ def report(state: AgentState) -> dict:
 
 def respond(state: AgentState) -> dict:
     """Nó de resposta final — monta a resposta completa para o usuário."""
+    needs = state.get("user_needs", {})
     recommendation = state.get("recommendation", "")
     report_text = state.get("report", "")
 
+    if not needs.get("proposito") or not needs.get("orcamento"):
+        faltando = []
+        if not needs.get("proposito"):
+            faltando.append("para que você vai usar o computador (ex: estudos, trabalho, jogos)")
+        if not needs.get("orcamento"):
+            faltando.append("qual é o seu orçamento aproximado (em reais)")
+
+        prompt = (
+            "Você é Herbert, assistente da Ajuda Tech.\n\n"
+            f"Ainda faltam informações para recomendar: {', '.join(faltando)}.\n"
+            "Faça UMA pergunta por vez, em linguagem simples, para obter a próxima informação.\n"
+            "Retorne apenas a pergunta."
+        )
+        response = _call_llm([{"role": "user", "content": prompt}])
+        return {"messages": [{"role": "assistant", "content": response}], "stage": "respond"}
     prompt = f"""Você é Herbert, assistente da Ajuda Tech.
 
 Monte a resposta final para o usuário com base na recomendação e relatório:

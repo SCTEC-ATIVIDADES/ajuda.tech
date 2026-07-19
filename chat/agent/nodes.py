@@ -207,7 +207,8 @@ def report(state: AgentState) -> dict:
             "stage": "report",
         }
 
-    melhor_produto = min(produtos, key=lambda p: abs(p["preco"] - needs.get("orcamento", 5000)))
+    orcamento = _parse_orcamento(needs.get("orcamento"), 5000.0)
+    melhor_produto = min(produtos, key=lambda p: abs(p["preco"] - orcamento))
 
     relatorio = gerar_relatorio.invoke({
         "nome": melhor_produto["nome"],

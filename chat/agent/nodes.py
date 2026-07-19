@@ -22,17 +22,20 @@ def _call_llm(messages: list[dict]) -> str:
     return _client.chat_completion(messages)
 
 
+def _message_text(message) -> str:
+    """Extrai o texto de uma mensagem, aceitando dict ou objeto BaseMessage."""
+    if isinstance(message, dict):
+        return message.get("content", "")
+    return getattr(message, "content", "")
+
+
 def classify_msg(state: AgentState) -> dict:
     """
     Classifica a intenção da última mensagem do usuário.
 
     Determina se é: saudacao, pergunta, dados, recomendacao.
     """
-    last_message = state["messages"][-1]
-    if isinstance(last_message, dict):
-        user_text = last_message.get("content", "")
-    else:
-        user_text = getattr(last_message, "content", str(last_message))
+    user_text = _message_text(state["messages"][-1])
 
     prompt = f"""Classifique a mensagem do usuário em UMA das categorias abaixo:
 - saudacao: cumprimentos, "oi", "olá", "bom dia", etc.
@@ -71,17 +74,22 @@ diga que você ajuda a escolher computadores e pergunte como pode ajudar."""
     }
 
 
+def _message_role(message) -> str:
+    """Extrai o papel de uma mensagem, aceitando dict ou objeto BaseMessage."""
+    if isinstance(message, dict):
+        return message.get("role", "assistant")
+    msg_type = getattr(message, "type", "")
+    if msg_type in {"human", "user"}:
+        return "user"
+    return "assistant"
+
+
 def gather_needs(state: AgentState) -> dict:
     """Nó de coleta — extrai necessidades do usuário a partir da conversa."""
     history = []
     for msg in state["messages"]:
-        if isinstance(msg, dict):
-            role = msg.get("role", "assistant")
-            content = msg.get("content", "")
-        else:
-            msg_type = getattr(msg, "type", None)
-            role = "user" if msg_type in {"human", "user"} else "assistant"
-            content = getattr(msg, "content", str(msg))
+        role = _message_role(msg)
+        content = _message_text(msg)
         history.append({"role": role, "content": content})
 
     current_needs = state.get("user_needs", {})

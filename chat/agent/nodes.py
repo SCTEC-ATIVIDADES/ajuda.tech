@@ -7,6 +7,7 @@ com as atualizações a serem aplicadas ao estado.
 
 import json
 import logging
+import re
 
 from chat.services import OpenRouterClient
 from chat.agent.state import AgentState
@@ -25,9 +26,45 @@ logger = logging.getLogger(__name__)
 
 _client = OpenRouterClient()
 
+_COT_TAG_RE = re.compile(
+    r"<(?:thinking|reasoning|scratchpad|thought|analysis)>.*?"
+    r"</(?:thinking|reasoning|scratchpad|thought|analysis)>",
+    re.DOTALL | re.IGNORECASE,
+)
+_PT_PARA_RE = re.compile(
+    r"^(?:Olá|Oi|Claro|Sim|Não|Para |Você |Qual |Como |O que |Pois "
+    r"|Agora |Então |Com base|De acordo|Como posso|Vou |Gostaria "
+    r"|Bom dia|Boa tarde|Boa noite|Poderia |Podemos |Vamos )",
+    re.IGNORECASE,
+)
+
+
+def _strip_cot(text: str) -> str:
+    """Remove chain-of-thought antes da resposta ao usuário.
+
+    Detecta o padrão CoT (em inglês) seguido de resposta (em português)
+    e retorna apenas o bloco em português.
+    """
+    cleaned = _COT_TAG_RE.sub("", text).strip()
+
+    blocks = [b.strip() for b in re.split(r"\n\s*\n", cleaned) if b.strip()]
+    if not blocks:
+        return text.strip()
+
+    for block in blocks:
+        if _PT_PARA_RE.search(block[:80]):
+            return block
+
+    single_lines = [b for b in blocks if "\n" not in b]
+    if single_lines:
+        return single_lines[-1]
+
+    return blocks[-1] if blocks else text.strip()
+
 
 def _call_llm(messages: list[dict]) -> str:
     """Chama o LLM via OpenRouterClient e retorna a resposta."""
+    logger.debug("LLM call: %s", messages[-1]["content"][:200])
     return _client.chat_completion(messages)
 
 
@@ -49,7 +86,7 @@ def classify_msg(state: AgentState) -> dict:
     prompt = build_agent_classification_prompt(user_text)
 
     response = _call_llm([{"role": "user", "content": prompt}])
-    intent = response.strip().lower()
+    intent = _strip_cot(response).strip().lower()
 
     valid_intents = {"saudacao", "dados", "pergunta", "recomendacao"}
     if intent not in valid_intents:
@@ -68,7 +105,7 @@ def greet(state: AgentState) -> dict:
     response = _call_llm([{"role": "user", "content": prompt}])
 
     return {
-        "messages": [{"role": "assistant", "content": response}],
+        "messages": [{"role": "assistant", "content": _strip_cot(response)}],
         "stage": "greet",
     }
 
@@ -185,13 +222,23 @@ def recommend(state: AgentState) -> dict:
         produtos_data = json.loads(produtos_result)
         produtos = produtos_data.get("produtos", [])
 
-    prompt = build_agent_recommendation_prompt(proposito, orcamento, mobilidade, produtos)
+    logger.info("RECOMMEND: cat=%s orc=%.0f prods=%d", categoria, orcamento, len(produtos))
+    for p in produtos:
+        logger.info("  -> %s R$%.2f", p["nome"], p["preco"])
 
+    if not produtos:
+        return {
+            "products_found": [],
+            "recommendation": "No momento não temos um produto ideal para o seu perfil no nosso catálogo. Posso buscar uma opção com orçamento um pouco maior ou outro tipo de computador.",
+            "stage": "recommend",
+        }
+
+    prompt = build_agent_recommendation_prompt(proposito, orcamento, mobilidade, produtos)
     response = _call_llm([{"role": "user", "content": prompt}])
 
     return {
         "products_found": produtos,
-        "recommendation": response,
+        "recommendation": _strip_cot(response),
         "stage": "recommend",
     }
 
@@ -249,12 +296,12 @@ def respond(state: AgentState) -> dict:
         question = _next_missing_question(needs)
         prompt = build_agent_followup_prompt(question)
         response = _call_llm([{"role": "user", "content": prompt}])
-        return {"messages": [{"role": "assistant", "content": response}], "stage": "respond"}
+        return {"messages": [{"role": "assistant", "content": _strip_cot(response)}], "stage": "respond"}
     prompt = build_agent_response_prompt(recommendation, report_text)
 
     response = _call_llm([{"role": "user", "content": prompt}])
 
     return {
-        "messages": [{"role": "assistant", "content": response}],
+        "messages": [{"role": "assistant", "content": _strip_cot(response)}],
         "stage": "respond",
     }

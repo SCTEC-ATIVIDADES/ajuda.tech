@@ -149,15 +149,22 @@ class AgentSendMessageView(View):
 
     http_method_names = ["post"]
 
-    def post(self, request):
+    def _parse_message_body(self, request) -> tuple[str | None, JsonResponse | None]:
         try:
             body = json.loads(request.body)
         except (json.JSONDecodeError, UnicodeDecodeError):
-            return JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
+            return None, JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
 
         message = body.get("message", "").strip()
         if not message:
-            return JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
+            return None, JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
+
+        return message, None
+
+    def post(self, request):
+        message, error = self._parse_message_body(request)
+        if error:
+            return error
 
         history = request.session.get("chat_history", [])
         history.append({"role": "user", "content": message})

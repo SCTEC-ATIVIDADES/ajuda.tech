@@ -1,4 +1,4 @@
-export const CHAT_ENDPOINT = '/send/';
+export const CHAT_ENDPOINT = '/agent/send/';
 
 const MOCK_RESPONSE =
   'Obrigado! Em breve conectaremos ao assistente. Por enquanto, continue me contando o que você precisa.';

@@ -277,6 +277,20 @@ def report(state: AgentState) -> dict:
     }
 
 
+def _next_missing_question(needs: dict) -> str:
+    """Retorna a próxima pergunta a fazer quando faltam dados obrigatórios."""
+    if not needs.get("proposito"):
+        return (
+            "Para que você vai usar o computador? Pode ser estudos, trabalho, "
+            "jogos, edição de fotos/vídeos ou uso básico como navegar na internet."
+        )
+    if not needs.get("orcamento"):
+        return "Qual é o seu orçamento aproximado?"
+    if not needs.get("mobilidade"):
+        return "Você precisa levar o computador para fora de casa com frequência?"
+    return "Tem alguma prioridade especial, como tela grande, bateria longa ou durabilidade?"
+
+
 def respond(state: AgentState) -> dict:
     """Nó de resposta final — monta a resposta completa para o usuário."""
     needs = state.get("user_needs", {})
@@ -284,16 +298,12 @@ def respond(state: AgentState) -> dict:
     report_text = state.get("report", "")
 
     if not needs.get("proposito") or not needs.get("orcamento"):
-        faltando = []
-        if not needs.get("proposito"):
-            faltando.append("para que você vai usar o computador (ex: estudos, trabalho, jogos)")
-        if not needs.get("orcamento"):
-            faltando.append("qual é o seu orçamento aproximado (em reais)")
-
+        question = _next_missing_question(needs)
         prompt = (
             "Você é Herbert, assistente da Ajuda Tech.\n\n"
-            f"Ainda faltam informações para recomendar: {', '.join(faltando)}.\n"
-            "Faça UMA pergunta por vez, em linguagem simples, para obter a próxima informação.\n"
+            "Ainda faltam informações para fazer uma recomendação segura. "
+            "Faça UMA pergunta por vez, em linguagem simples e amigável.\n\n"
+            f"Pergunta: {question}\n\n"
             "Retorne apenas a pergunta."
         )
         response = _call_llm([{"role": "user", "content": prompt}])

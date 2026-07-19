@@ -8,7 +8,6 @@ from langgraph.graph import END, START, StateGraph
 
 from chat.agent.nodes import (
     classify_msg,
-    extract_context,
     greet,
     gather_needs,
     recommend,
@@ -31,13 +30,13 @@ def _route_after_classify(state: AgentState) -> str:
 
 
 def _should_continue_gathering(state: AgentState) -> str:
-    """Decide se continua coletando dados ou vai para extração."""
+    """Decide se continua coletando dados ou vai direto para recomendação."""
     needs = state.get("user_needs", {})
     has_purpose = bool(needs.get("proposito"))
     has_budget = bool(needs.get("orcamento"))
 
     if has_purpose and has_budget:
-        return "extract_context"
+        return "recommend"
     return "respond"
 
 
@@ -45,17 +44,16 @@ def build_graph() -> StateGraph:
     """
     Monta o grafo LangGraph com todos os nós e conexões.
 
-    Fluxo:
+    Fluxo otimizado (mínimo de chamadas LLM):
         START → classify_msg → [greet | gather_needs | recommend]
-        gather_needs → [extract_context | respond]
-        extract_context → recommend → report → respond → END
+        gather_needs → [recommend | respond]
+        recommend → report → respond → END
     """
     graph = StateGraph(AgentState)
 
     graph.add_node("classify_msg", classify_msg)
     graph.add_node("greet", greet)
     graph.add_node("gather_needs", gather_needs)
-    graph.add_node("extract_context", extract_context)
     graph.add_node("recommend", recommend)
     graph.add_node("report", report)
     graph.add_node("respond", respond)
@@ -78,12 +76,11 @@ def build_graph() -> StateGraph:
         "gather_needs",
         _should_continue_gathering,
         {
-            "extract_context": "extract_context",
+            "recommend": "recommend",
             "respond": "respond",
         },
     )
 
-    graph.add_edge("extract_context", "recommend")
     graph.add_edge("recommend", "report")
     graph.add_edge("report", "respond")
     graph.add_edge("respond", END)

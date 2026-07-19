@@ -76,7 +76,9 @@ Responda APENAS com a categoria (uma palavra)."""
 
 def build_agent_greeting_prompt() -> str:
     """Monta o prompt de saudação do agente."""
-    return """Você é Herbert, assistente da Ajuda Tech.
+    return """IMPORTANTE: Retorne APENAS a mensagem final para o usuário. NÃO inclua pensamentos, análises, raciocínio ou texto interno.
+
+Você é Herbert, assistente da Ajuda Tech.
 O usuário acabou de cumprimentar. Responda de forma breve e amigável (1-2 frases),
 diga que você ajuda a escolher computadores e pergunte como pode ajudar."""
 
@@ -133,22 +135,24 @@ def build_agent_recommendation_prompt(
     produtos: list[dict],
 ) -> str:
     """Monta o prompt de recomendação com base nas necessidades e catálogo."""
-    return f"""Você é Herbert, assistente da Ajuda Tech.
+    return f"""IMPORTANTE: Retorne APENAS a mensagem final para o usuário. NÃO inclua pensamentos, análises, raciocínio ou texto interno. Comece diretamente com a resposta.
+
+Você é Herbert, assistente da Ajuda Tech.
+
+REGRA ABSOLUTA: Use APENAS os produtos listados abaixo. NÃO invente, NÃO sugira produtos que não estejam nesta lista. Se nenhum se encaixar, diga que não encontrou algo adequado.
 
 Necessidades do usuário:
 - Propósito: {proposito}
 - Orçamento: R$ {orcamento}
 - Mobilidade: {mobilidade}
 
-Produtos disponíveis no catálogo:
+Produtos disponíveis no catálogo (USE APENAS ESTES):
 {json.dumps(produtos, ensure_ascii=False, indent=2)}
 
-Com base nas necessidades e produtos disponíveis, gere uma recomendação clara
-e objetiva em linguagem simples (máximo 3 frases).
-Explique por que o produto recomendado atende as necessidades.
+Gere uma recomendação clara e objetiva em linguagem simples (máximo 3 frases).
+Explique por que o produto recomendado atende as necessidades, citando nome e preço exatos do catálogo.
 
-Se nenhum produto se encaixar, diga que não encontrou algo adequado e sugira
-aumentar o orçamento ou mudar os critérios.
+Se nenhum produto se encaixar no orçamento ou necessidade, diga: "No momento não temos um produto ideal para o seu perfil no nosso catálogo."
 
 Retorne apenas o texto da recomendação."""
 
@@ -156,6 +160,7 @@ Retorne apenas o texto da recomendação."""
 def build_agent_followup_prompt(question: str) -> str:
     """Monta o prompt para pedir a próxima informação faltante."""
     return (
+        "IMPORTANTE: Retorne APENAS a mensagem final para o usuário. NÃO inclua pensamentos ou raciocínio.\n\n"
         "Você é Herbert, assistente da Ajuda Tech.\n\n"
         "Ainda faltam informações para fazer uma recomendação segura. "
         "Faça UMA pergunta por vez, em linguagem simples e amigável.\n\n"
@@ -166,7 +171,9 @@ def build_agent_followup_prompt(question: str) -> str:
 
 def build_agent_response_prompt(recommendation: str, report_text: str) -> str:
     """Monta o prompt da resposta final ao usuário."""
-    return f"""Você é Herbert, assistente da Ajuda Tech.
+    return f"""IMPORTANTE: Retorne APENAS a mensagem final para o usuário. NÃO inclua pensamentos, análises, raciocínio ou texto interno. Comece diretamente com a resposta.
+
+Você é Herbert, assistente da Ajuda Tech.
 
 Monte a resposta final para o usuário com base na recomendação e relatório:
 

@@ -82,11 +82,6 @@ export function initChatApp(root = document) {
             break;
           }
         }
-        state = appendMessage(state, {
-          role: "user",
-          text: err.failedMessage,
-          status: "failed",
-        });
         refresh();
         showError(
           errorEl,

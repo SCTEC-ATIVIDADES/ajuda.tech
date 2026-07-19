@@ -24,6 +24,12 @@ from chat.services import OpenRouterClient
 
 logger = logging.getLogger(__name__)
 
+
+def _get_agent_graph():
+    """Carrega o grafo do agente sob demanda para facilitar testes."""
+    from chat.agent.graph import agent_graph
+    return agent_graph
+
 _MAX_HISTORY_SIZE = 50
 
 
@@ -170,8 +176,6 @@ class AgentSendMessageView(View):
         history.append({"role": "user", "content": message})
 
         try:
-            from chat.agent.graph import agent_graph
-
             messages = history[-_MAX_HISTORY_SIZE:]
 
             initial_state = {
@@ -184,7 +188,7 @@ class AgentSendMessageView(View):
                 "classified_intent": "",
             }
 
-            result = agent_graph.invoke(initial_state)
+            result = _get_agent_graph().invoke(initial_state)
 
             reply = ""
             for msg in reversed(result.get("messages", [])):

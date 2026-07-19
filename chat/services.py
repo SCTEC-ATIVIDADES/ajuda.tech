@@ -39,7 +39,7 @@ _OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 _DEFAULT_MODEL = "deepseek/deepseek-v4-flash:free"
 _DEFAULT_TIMEOUT = 60
 _DEFAULT_MAX_RETRIES = 2
-_DEFAULT_MAX_RATE_LIMIT_RETRIES = 10
+_DEFAULT_MAX_RATE_LIMIT_RETRIES = 2
 _RETRYABLE_STATUS_CODES = frozenset({500, 502, 503, 504})
 _MAX_CHAT_TOKENS = 800
 _MAX_EXTRACTION_TOKENS = 1500
@@ -156,7 +156,7 @@ class OpenRouterClient:
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": 0.7,
-            "include_reasoning": False,
+            "reasoning": {"effort": "none"},
         }
 
     def _backoff_sleep(self, attempt: int) -> None:
@@ -169,21 +169,11 @@ class OpenRouterClient:
         return self._execute_with_rate_limit_retry(payload)
 
     def _execute_with_rate_limit_retry(self, payload: dict) -> str:
-        """Envolve a chamada com retry específico para 429 (contador separado)."""
-        for attempt in range(self.max_rate_limit_retries + 1):
-            try:
-                return self._execute_with_backoff_retry(payload)
-            except RateLimitError as exc:
-                if attempt == self.max_rate_limit_retries:
-                    raise
-                logger.warning(
-                    "Rate limit atingido (429) — tentativa %d/%d. Aguardando %ds.",
-                    attempt + 1,
-                    self.max_rate_limit_retries,
-                    exc.retry_after,
-                )
-                time.sleep(exc.retry_after)
-        raise ServiceUnavailableError("Rate limit excedido após todas as tentativas.")  # pragma: no cover
+        """Sem retry para 429 — retorna erro imediatamente para economizar quota."""
+        try:
+            return self._execute_with_backoff_retry(payload)
+        except RateLimitError:
+            raise
 
     def _execute_with_backoff_retry(self, payload: dict) -> str:
         """Executa a chamada HTTP com retry exponencial para falhas transitórias (5xx, timeout, conexão)."""

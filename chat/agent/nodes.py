@@ -172,16 +172,39 @@ Retorne APENAS o JSON."""
     }
 
 
+def _parse_orcamento(value, default: float = 5000.0) -> float:
+    """Converte orçamento para float, limpando strings como 'R$ 5.000,00'."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        cleaned = value.replace("R$", "").replace(".", "").replace(",", ".").strip()
+        try:
+            return float(cleaned)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
+def _parse_mobilidade(value, default: str = "media") -> str:
+    """Normaliza mobilidade para 'alta', 'media' ou 'baixa'."""
+    if not value:
+        return default
+    text = str(value).lower().strip()
+    if text in {"alta", "máxima", "muita", "total"}:
+        return "alta"
+    if text in {"baixa", "mínima", "pouca", "nenhuma"}:
+        return "baixa"
+    if text in {"media", "média", "moderada"}:
+        return "media"
+    return default
+
+
 def recommend(state: AgentState) -> dict:
     """Nó de recomendação — busca produtos e gera recomendação."""
     needs = state.get("user_needs", {})
     proposito = needs.get("proposito", "uso geral")
-    orcamento_raw = needs.get("orcamento", 5000)
-    try:
-        orcamento = float(orcamento_raw)
-    except (TypeError, ValueError):
-        orcamento = 5000.0
-    mobilidade = str(needs.get("mobilidade", "media")).lower()
+    orcamento = _parse_orcamento(needs.get("orcamento"), 5000.0)
+    mobilidade = _parse_mobilidade(needs.get("mobilidade"), "media")
     if mobilidade == "alta":
         categoria = "notebook"
     elif mobilidade == "baixa":

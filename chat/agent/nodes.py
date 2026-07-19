@@ -11,6 +11,15 @@ import logging
 from chat.services import OpenRouterClient
 from chat.agent.state import AgentState
 from chat.agent.tools import buscar_produtos, comparar_produtos, gerar_relatorio
+from chat.prompts import (
+    build_agent_classification_prompt,
+    build_agent_context_prompt,
+    build_agent_followup_prompt,
+    build_agent_greeting_prompt,
+    build_agent_needs_prompt,
+    build_agent_recommendation_prompt,
+    build_agent_response_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +46,7 @@ def classify_msg(state: AgentState) -> dict:
     """
     user_text = _message_text(state["messages"][-1])
 
-    prompt = f"""Classifique a mensagem do usuário em UMA das categorias abaixo:
-- saudacao: cumprimentos, "oi", "olá", "bom dia", etc.
-- dados: o usuário está fornecendo informações (propósito, orçamento, mobilidade)
-- pergunta: o usuário quer saber algo sobre computadores, especificações, diferenças
-- recomendacao: o usuário pede uma recomendação ou sugestão de produto
-
-Mensagem do usuário: "{user_text}"
-
-Responda APENAS com a categoria (uma palavra)."""
+    prompt = build_agent_classification_prompt(user_text)
 
     response = _call_llm([{"role": "user", "content": prompt}])
     intent = response.strip().lower()
@@ -62,9 +63,7 @@ Responda APENAS com a categoria (uma palavra)."""
 
 def greet(state: AgentState) -> dict:
     """Nó de saudação — responde ao cumprimento do usuário."""
-    prompt = """Você é Herbert, assistente da Ajuda Tech.
-O usuário acabou de cumprimentar. Responda de forma breve e amigável (1-2 frases),
-diga que você ajuda a escolher computadores e pergunte como pode ajudar."""
+    prompt = build_agent_greeting_prompt()
 
     response = _call_llm([{"role": "user", "content": prompt}])
 
@@ -94,24 +93,7 @@ def gather_needs(state: AgentState) -> dict:
 
     current_needs = state.get("user_needs", {})
 
-    prompt = f"""Você é Herbert, assistente da Ajuda Tech.
-
-Analise a conversa abaixo e extraia as necessidades do usuário.
-Necessidades conhecidas até agora: {json.dumps(current_needs, ensure_ascii=False)}
-
-Conversa:
-{json.dumps(history, ensure_ascii=False, indent=2)}
-
-Extraia e retorne um JSON com as seguintes chaves (preencha o que conseguir):
-{{
-  "proposito": "para que o computador será usado (ex: estudos, games, escritório)",
-  "orcamento": valor numérico máximo em reais (ou null se não informado),
-  "mobilidade": "alta", "media" ou "baixa" (ou null se não informado),
-  "prioridades": ["lista", "de", "prioridades"]
-}}
-
-Se o usuário não forneceu uma informação ainda, deixe null.
-Retorne APENAS o JSON, sem texto adicional."""
+    prompt = build_agent_needs_prompt(current_needs, history)
 
     response = _call_llm([{"role": "user", "content": prompt}])
 
@@ -135,25 +117,7 @@ def extract_context(state: AgentState) -> dict:
     """Nó de extração — valida e organiza os dados coletados."""
     needs = state.get("user_needs", {})
 
-    prompt = f"""Você é Herbert, assistente da Ajuda Tech.
-
-Analise as necessidades coletadas do usuário e confirme se estão suficientes
-para fazer uma recomendação:
-
-{json.dumps(needs, ensure_ascii=False, indent=2)}
-
-Necessidades mínimas para recomendar:
-- propósito de uso (obrigatório)
-- orçamento ou faixa de preço (obrigatório)
-
-Responda um JSON:
-{{
-  "suficiente": true/false,
-  "mensagem_confirmacao": "resumo do que entendeu do usuário",
-  "faltando": ["lista de informações faltantes"]
-}}
-
-Retorne APENAS o JSON."""
+    prompt = build_agent_context_prompt(needs)
 
     response = _call_llm([{"role": "user", "content": prompt}])
 
@@ -221,24 +185,7 @@ def recommend(state: AgentState) -> dict:
         produtos_data = json.loads(produtos_result)
         produtos = produtos_data.get("produtos", [])
 
-    prompt = f"""Você é Herbert, assistente da Ajuda Tech.
-
-Necessidades do usuário:
-- Propósito: {proposito}
-- Orçamento: R$ {orcamento}
-- Mobilidade: {mobilidade}
-
-Produtos disponíveis no catálogo:
-{json.dumps(produtos, ensure_ascii=False, indent=2)}
-
-Com base nas necessidades e produtos disponíveis, gere uma recomendação clara
-e objetiva em linguagem simples (máximo 3 frases).
-Explique por que o produto recomendado atende as necessidades.
-
-Se nenhum produto se encaixar, diga que não encontrou algo adequado e sugira
-aumentar o orçamento ou mudar os critérios.
-
-Retorne apenas o texto da recomendação."""
+    prompt = build_agent_recommendation_prompt(proposito, orcamento, mobilidade, produtos)
 
     response = _call_llm([{"role": "user", "content": prompt}])
 
@@ -299,32 +246,10 @@ def respond(state: AgentState) -> dict:
 
     if not needs.get("proposito") or not needs.get("orcamento"):
         question = _next_missing_question(needs)
-        prompt = (
-            "Você é Herbert, assistente da Ajuda Tech.\n\n"
-            "Ainda faltam informações para fazer uma recomendação segura. "
-            "Faça UMA pergunta por vez, em linguagem simples e amigável.\n\n"
-            f"Pergunta: {question}\n\n"
-            "Retorne apenas a pergunta."
-        )
+        prompt = build_agent_followup_prompt(question)
         response = _call_llm([{"role": "user", "content": prompt}])
         return {"messages": [{"role": "assistant", "content": response}], "stage": "respond"}
-    prompt = f"""Você é Herbert, assistente da Ajuda Tech.
-
-Monte a resposta final para o usuário com base na recomendação e relatório:
-
-Recomendação:
-{recommendation}
-
-Relatório:
-{report_text}
-
-Instruções:
-- Responda de forma amigável e simples (máximo 4 frases)
-- Destaque o produto recomendado e o preço
-- Ofereça gerar o relatório completo se o usuário quiser
-- Não use jargões técnicos
-
-Retorne apenas a mensagem final para o usuário."""
+    prompt = build_agent_response_prompt(recommendation, report_text)
 
     response = _call_llm([{"role": "user", "content": prompt}])
 

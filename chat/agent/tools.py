@@ -5,7 +5,6 @@ Ferramentas que o Herbert pode usar durante o fluxo de recomendação.
 """
 
 import json
-import os
 from pathlib import Path
 
 from langchain_core.tools import tool

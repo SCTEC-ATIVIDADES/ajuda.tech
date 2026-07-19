@@ -168,7 +168,7 @@ class AgentState(TypedDict):
 ---
 
 ```
-Cada nó recebe o dicionário inteiro, mas só se preocupa com os campos que precisa. O campo stage funciona como o roteador: o nó anterior写入 o stage, e o nó seguinte lê ele para decidir se deve executar.
+Cada nó recebe o dicionário inteiro, mas só se preocupa com os campos que precisa. O campo stage funciona como o roteador: o nó anterior grava o stage, e o nó seguinte lê ele para decidir se deve executar.
 
 Fluxo visual:
 

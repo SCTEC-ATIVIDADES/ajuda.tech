@@ -37,6 +37,26 @@ def buscar_produtos(categoria: str, orcamento_max: float) -> str:
     str
         JSON com a lista de produtos encontrados.
     """
+    if not categoria or not isinstance(categoria, str):
+        return json.dumps(
+            {"erro": "Parâmetro 'categoria' inválido ou ausente.", "produtos": []},
+            ensure_ascii=False,
+        )
+
+    if isinstance(orcamento_max, str):
+        cleaned = orcamento_max.replace("R$", "").replace(".", "").replace(",", ".").strip()
+        try:
+            orcamento_max = float(cleaned)
+        except (TypeError, ValueError):
+            orcamento_max = None
+
+    if orcamento_max is None or not isinstance(orcamento_max, (int, float)):
+        return json.dumps(
+            {"erro": "Parâmetro 'orcamento_max' inválido ou ausente.", "produtos": []},
+            ensure_ascii=False,
+        )
+
+    orcamento_max = float(orcamento_max)
     produtos = _carregar_produtos()
 
     resultados = [

@@ -15,7 +15,6 @@ from chat.agent.tools import buscar_produtos, comparar_produtos, gerar_relatorio
 from chat.prompts import (
     build_agent_classification_prompt,
     build_agent_context_prompt,
-    build_agent_followup_prompt,
     build_agent_greeting_prompt,
     build_agent_needs_prompt,
     build_agent_recommendation_prompt,
@@ -23,8 +22,6 @@ from chat.prompts import (
 )
 
 logger = logging.getLogger(__name__)
-
-_client = OpenRouterClient()
 
 _COT_TAG_RE = re.compile(
     r"<(?:thinking|reasoning|scratchpad|thought|analysis)>.*?"
@@ -65,7 +62,7 @@ def _strip_cot(text: str) -> str:
 def _call_llm(messages: list[dict]) -> str:
     """Chama o LLM via OpenRouterClient e retorna a resposta."""
     logger.debug("LLM call: %s", messages[-1]["content"][:200])
-    return _client.chat_completion(messages)
+    return OpenRouterClient().chat_completion(messages)
 
 
 def _message_text(message) -> str:
@@ -135,7 +132,7 @@ def gather_needs(state: AgentState) -> dict:
     response = _call_llm([{"role": "user", "content": prompt}])
 
     try:
-        clean_response = response.strip()
+        clean_response = _strip_cot(response).strip()
         if clean_response.startswith("```"):
             clean_response = clean_response.split("\n", 1)[1].rsplit("```", 1)[0].strip()
         needs = json.loads(clean_response)
@@ -159,7 +156,7 @@ def extract_context(state: AgentState) -> dict:
     response = _call_llm([{"role": "user", "content": prompt}])
 
     try:
-        clean_response = response.strip()
+        clean_response = _strip_cot(response).strip()
         if clean_response.startswith("```"):
             clean_response = clean_response.split("\n", 1)[1].rsplit("```", 1)[0].strip()
         result = json.loads(clean_response)
@@ -294,9 +291,7 @@ def respond(state: AgentState) -> dict:
 
     if not needs.get("proposito") or not needs.get("orcamento"):
         question = _next_missing_question(needs)
-        prompt = build_agent_followup_prompt(question)
-        response = _call_llm([{"role": "user", "content": prompt}])
-        return {"messages": [{"role": "assistant", "content": _strip_cot(response)}], "stage": "respond"}
+        return {"messages": [{"role": "assistant", "content": question}], "stage": "respond"}
     prompt = build_agent_response_prompt(recommendation, report_text)
 
     response = _call_llm([{"role": "user", "content": prompt}])

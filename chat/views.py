@@ -146,7 +146,7 @@ class RecommendView(View):
 
 class AgentSendMessageView(View):
     """
-    POST /chat/agent/send/
+    POST /agent/send/
     Body JSON: {"message": "<texto do usuário>"}
     Resposta:  {"reply": "<resposta do agente>", "report": "<relatório se disponível>"}
 

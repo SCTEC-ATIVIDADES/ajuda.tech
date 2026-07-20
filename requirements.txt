@@ -4,6 +4,10 @@ python-decouple>=3.8
 requests>=2.31.0
 django-cors-headers>=4.0.0
 
+# LangGraph Agent
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
 # Testing
 pytest>=8.0.0
 pytest-django>=4.8.0

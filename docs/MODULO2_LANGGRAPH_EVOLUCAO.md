@@ -167,6 +167,37 @@ class AgentState(TypedDict):
 
 ---
 
+```
+Cada nó recebe o dicionário inteiro, mas só se preocupa com os campos que precisa. O campo stage funciona como o roteador: o nó anterior grava o stage, e o nó seguinte lê ele para decidir se deve executar.
+
+Fluxo visual:
+
+classify_msg → gather_needs → extract_ctx → recommend → report → respond
+     │              │              │             │           │          │
+  stage: "gather"  stage: "ext"  stage: "rec"  stage: "rpt" stage: "resp"
+
+É basicamente um pipeline sequencial usando o estado como canal de comunicação entre os nós.
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> classify_msg
+
+    classify_msg --> gather_needs: classificar
+    gather_needs --> extract_ctx: extrair
+    extract_ctx --> recommend: validar
+    recommend --> report: gerar
+    report --> respond: montar
+    respond --> [*]
+
+    classify_msg: classify_msg\n Lê: messages\n Escreve: stage, user_needs
+    gather_needs: gather_needs\n Lê: messages, user_needs\n Escreve: user_needs, stage
+    extract_ctx: extract_ctx\n Lê: user_needs\n Escreve: user_needs, stage
+    recommend: recommend\n Lê: user_needs\n Escreve: products_found, recommendation, stage
+    report: report\n Lê: recommendation, products_found\n Escreve: report, stage
+    respond: respond\n Lê: report, recommendation\n Escreve: messages
+```
+
 ## 5. Tools a Implementar
 
 ### 5.1 Tools definidas

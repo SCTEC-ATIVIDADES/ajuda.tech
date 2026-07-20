@@ -1,0 +1,197 @@
+[
+  {
+    "id": 1,
+    "nome": "Notebook Dell Inspiron 15",
+    "tipo": "notebook",
+    "preco": 3299.90,
+    "especificacoes": {
+      "processador": "Intel Core i5-1235U",
+      "ram": "8GB DDR4",
+      "armazenamento": "256GB SSD",
+      "tela": "15.6 polegadas Full HD",
+      "peso": "1.65 kg"
+    },
+    "indicado_para": ["estudos", "escritorio", "navegador", "editor documentos"],
+    "mobilidade": "alta",
+    "faixa_orcamento": "ate 3500"
+  },
+  {
+    "id": 2,
+    "nome": "Notebook Lenovo IdeaPad 3",
+    "tipo": "notebook",
+    "preco": 2799.90,
+    "especificacoes": {
+      "processador": "AMD Ryzen 5 5500U",
+      "ram": "8GB DDR4",
+      "armazenamento": "256GB SSD",
+      "tela": "15.6 polegadas Full HD",
+      "peso": "1.65 kg"
+    },
+    "indicado_para": ["estudos", "navegador", "editor documentos", "videoaulas"],
+    "mobilidade": "alta",
+    "faixa_orcamento": "ate 3000"
+  },
+  {
+    "id": 3,
+    "nome": "Notebook Acer Aspire 5",
+    "tipo": "notebook",
+    "preco": 3899.90,
+    "especificacoes": {
+      "processador": "Intel Core i5-1335U",
+      "ram": "8GB DDR5",
+      "armazenamento": "512GB SSD",
+      "tela": "15.6 polegadas Full HD",
+      "peso": "1.78 kg"
+    },
+    "indicado_para": ["estudos", "escritorio", "multimidia", "fotografia basica"],
+    "mobilidade": "alta",
+    "faixa_orcamento": "ate 4000"
+  },
+  {
+    "id": 4,
+    "nome": "Notebook HP Pavilion 15",
+    "tipo": "notebook",
+    "preco": 4499.90,
+    "especificacoes": {
+      "processador": "AMD Ryzen 7 5700U",
+      "ram": "16GB DDR4",
+      "armazenamento": "512GB SSD",
+      "tela": "15.6 polegadas Full HD IPS",
+      "peso": "1.74 kg"
+    },
+    "indicado_para": ["estudos", "escritorio", "multimidia", "edicao basica"],
+    "mobilidade": "alta",
+    "faixa_orcamento": "4000 a 5000"
+  },
+  {
+    "id": 5,
+    "nome": "PC Desktop Positivo Studio",
+    "tipo": "desktop",
+    "preco": 2199.90,
+    "especificacoes": {
+      "processador": "Intel Core i3-12100",
+      "ram": "8GB DDR4",
+      "armazenamento": "256GB SSD",
+      "placa_mae": "Intel H610",
+      "fonte": "400W"
+    },
+    "indicado_para": ["estudos", "escritorio", "navegador", "videoaulas"],
+    "mobilidade": "baixa",
+    "faixa_orcamento": "ate 2500"
+  },
+  {
+    "id": 6,
+    "nome": "PC Desktop Positivo Performa",
+    "tipo": "desktop",
+    "preco": 3499.90,
+    "especificacoes": {
+      "processador": "AMD Ryzen 5 5600G",
+      "ram": "16GB DDR4",
+      "armazenamento": "512GB SSD",
+      "placa_mae": "AMD B550M",
+      "fonte": "500W"
+    },
+    "indicado_para": ["estudos", "escritorio", "multimidia", "edicao basica", "games leves"],
+    "mobilidade": "baixa",
+    "faixa_orcamento": "3000 a 4000"
+  },
+  {
+    "id": 7,
+    "nome": "PC Desktop Pichau Ravage",
+    "tipo": "desktop",
+    "preco": 5499.90,
+    "especificacoes": {
+      "processador": "AMD Ryzen 5 7600",
+      "ram": "16GB DDR5",
+      "armazenamento": "1TB SSD",
+      "placa_de_video": "NVIDIA RTX 4060 8GB",
+      "placa_mae": "AMD B650M",
+      "fonte": "600W"
+    },
+    "indicado_para": ["games", "edicao video", "edicao foto", "3d", "streaming"],
+    "mobilidade": "baixa",
+    "faixa_orcamento": "5000 a 6000"
+  },
+  {
+    "id": 8,
+    "nome": "Notebook gamer Acer Nitro 5",
+    "tipo": "notebook",
+    "preco": 5999.90,
+    "especificacoes": {
+      "processador": "Intel Core i5-12500H",
+      "ram": "16GB DDR5",
+      "armazenamento": "512GB SSD",
+      "placa_de_video": "NVIDIA RTX 4050 6GB",
+      "tela": "15.6 polegadas Full HD 144Hz",
+      "peso": "2.2 kg"
+    },
+    "indicado_para": ["games", "edicao video", "streaming", "3d basico"],
+    "mobilidade": "media",
+    "faixa_orcamento": "5500 a 6500"
+  },
+  {
+    "id": 9,
+    "nome": "Notebook Dell Vostro 15",
+    "tipo": "notebook",
+    "preco": 4299.90,
+    "especificacoes": {
+      "processador": "Intel Core i5-1335U",
+      "ram": "16GB DDR4",
+      "armazenamento": "512GB SSD",
+      "tela": "15.6 polegadas Full HD",
+      "peso": "1.68 kg"
+    },
+    "indicado_para": ["escritorio", "empresarial", "planilhas", "navegador"],
+    "mobilidade": "alta",
+    "faixa_orcamento": "4000 a 5000"
+  },
+  {
+    "id": 10,
+    "nome": "PC Desktop Mancer Cobalt",
+    "tipo": "desktop",
+    "preco": 2799.90,
+    "especificacoes": {
+      "processador": "AMD Ryzen 5 4600G",
+      "ram": "8GB DDR4",
+      "armazenamento": "480GB SSD",
+      "placa_mae": "AMD A520M",
+      "fonte": "400W"
+    },
+    "indicado_para": ["estudos", "escritorio", "navegador", "multimidia"],
+    "mobilidade": "baixa",
+    "faixa_orcamento": "2500 a 3000"
+  },
+  {
+    "id": 11,
+    "nome": "Notebook Lenovo ThinkPad E14",
+    "tipo": "notebook",
+    "preco": 4799.90,
+    "especificacoes": {
+      "processador": "Intel Core i7-1355U",
+      "ram": "16GB DDR4",
+      "armazenamento": "512GB SSD",
+      "tela": "14 polegadas Full HD IPS",
+      "peso": "1.64 kg"
+    },
+    "indicado_para": ["escritorio", "empresarial", "programacao", "multitarefa"],
+    "mobilidade": "alta",
+    "faixa_orcamento": "4500 a 5000"
+  },
+  {
+    "id": 12,
+    "nome": "PC Desktop Pichau Neutra",
+    "tipo": "desktop",
+    "preco": 7999.90,
+    "especificacoes": {
+      "processador": "AMD Ryzen 7 7700X",
+      "ram": "32GB DDR5",
+      "armazenamento": "1TB SSD NVMe",
+      "placa_de_video": "NVIDIA RTX 4070 12GB",
+      "placa_mae": "AMD B650",
+      "fonte": "750W"
+    },
+    "indicado_para": ["games", "edicao video profissional", "3d", "renderizacao", "streaming"],
+    "mobilidade": "baixa",
+    "faixa_orcamento": "7500 a 8500"
+  }
+]

@@ -173,6 +173,8 @@ Office e assistir aulas. Ele custa R$ 2.799,00 e vai atender
 muito bem o que você precisa.
 ```
 
+![alt text](image.png)
+
 ## 9. Decisões Tomadas
 
 - **LangGraph sobre abordagem procedural:** escolhemos o framework porque permite visualizar o fluxo do agente como um grafo, facilitando manutenção e testes

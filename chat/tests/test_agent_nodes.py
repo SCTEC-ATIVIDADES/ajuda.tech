@@ -6,7 +6,7 @@ from django.conf import settings
 
 settings.LLM_API_KEY = "test-key"
 
-from chat.agent.nodes import report
+from chat.agent.nodes import _call_llm, report
 
 
 @patch("chat.agent.nodes.gerar_relatorio")
@@ -39,3 +39,21 @@ def test_report_accepts_string_budget(mock_gerar_relatorio):
 
     assert result == {"report": "Relatório gerado", "stage": "report"}
     assert mock_gerar_relatorio.invoke.call_args.args[0]["nome"] == "Notebook Ideal"
+
+
+@patch("chat.agent.nodes.OpenRouterClient")
+def test_call_llm_returns_fallback_for_safety_response(mock_client):
+    mock_client.return_value.chat_completion.return_value = "content filtered"
+
+    result = _call_llm([{"role": "user", "content": "teste"}])
+
+    assert result == "Desculpe, não consegui processar sua mensagem. Pode reformular?"
+
+
+@patch("chat.agent.nodes.OpenRouterClient")
+def test_call_llm_returns_fallback_for_short_response(mock_client):
+    mock_client.return_value.chat_completion.return_value = "ok"
+
+    result = _call_llm([{"role": "user", "content": "teste"}])
+
+    assert result == "Desculpe, não consegui processar sua mensagem. Pode reformular?"

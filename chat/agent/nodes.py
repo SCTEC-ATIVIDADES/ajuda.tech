@@ -70,12 +70,15 @@ _SAFETY_RESPONSES = {
 
 def _call_llm(messages: list[dict]) -> str:
     """Chama o LLM via OpenRouterClient e retorna a resposta."""
-    logger.debug("LLM call: %s", messages[-1]["content"][:200])
+    logger.debug("LLM call metadata: messages=%d", len(messages))
     response = OpenRouterClient().chat_completion(messages)
-    logger.debug("LLM response (first 200): %s", response[:200])
+    logger.debug("LLM response metadata: chars=%d", len(response))
 
     if response.strip().lower() in _SAFETY_RESPONSES or len(response.strip()) < 5:
-        logger.warning("Resposta de safety filter detectada: %s", response[:100])
+        logger.warning(
+            "Fallback aplicado para resposta do LLM: chars=%d",
+            len(response.strip()),
+        )
         return "Desculpe, não consegui processar sua mensagem. Pode reformular?"
 
     return response

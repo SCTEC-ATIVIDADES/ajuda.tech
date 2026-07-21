@@ -3,6 +3,19 @@
 > Documento de análise e planejamento para discussão em grupo.
 > Criado em: 2026-07-16
 
+Trabalho módulo 2 com LangGraph
+
+Grupo Dupla
+Gisele Tavares
+Wagner Sousa
+
+Slides:
+https://gamma.app/docs/Ajuda-Tech-Problema-e-Solucao-r9t5jfg1cwkiv0e
+
+Repositório:
+https://github.com/SCTECH-ATIVIDADES/ajuda.tech
+
+
 ---
 
 ## 1. Situação Atual do Projeto

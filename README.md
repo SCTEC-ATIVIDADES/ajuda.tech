@@ -1,6 +1,21 @@
 # Ajuda Tech — Assistente Inteligente para Compra de Computadores
 
-> Projeto do Mini-Projeto Avaliativo — IA para Desenvolvedores (Módulo 2)
+# Módulo 2 — Evolução do Projeto com LangGraph
+
+> Documento de análise e planejamento para discussão em grupo.
+> Criado em: 2026-07-16
+
+Trabalho módulo 2 com LangGraph
+
+Grupo Dupla
+Gisele Tavares
+Wagner Sousa
+
+Slides:
+https://gamma.app/docs/Ajuda-Tech-Problema-e-Solucao-r9t5jfg1cwkiv0e
+
+Repositório:
+https://github.com/SCTECH-ATIVIDADES/ajuda.tech
 
 ## Integrantes
 

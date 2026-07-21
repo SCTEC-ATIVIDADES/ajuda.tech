@@ -16,7 +16,7 @@ import { postChat, postChatMock, CHAT_ENDPOINT } from './chatApi.js';
 
 describe('CHAT_ENDPOINT', () => {
   it('aponta para o endpoint correto do backend', () => {
-    expect(CHAT_ENDPOINT).toBe('/send/');
+    expect(CHAT_ENDPOINT).toBe('/agent/send/');
   });
 });
 

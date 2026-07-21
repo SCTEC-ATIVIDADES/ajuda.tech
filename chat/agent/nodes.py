@@ -59,10 +59,26 @@ def _strip_cot(text: str) -> str:
     return blocks[-1] if blocks else text.strip()
 
 
+_SAFETY_RESPONSES = {
+    "user safety: safe",
+    "user safety: unsafe",
+    "safety",
+    "content filtered",
+    "blocked",
+}
+
+
 def _call_llm(messages: list[dict]) -> str:
     """Chama o LLM via OpenRouterClient e retorna a resposta."""
     logger.debug("LLM call: %s", messages[-1]["content"][:200])
-    return OpenRouterClient().chat_completion(messages)
+    response = OpenRouterClient().chat_completion(messages)
+    logger.debug("LLM response (first 200): %s", response[:200])
+
+    if response.strip().lower() in _SAFETY_RESPONSES or len(response.strip()) < 5:
+        logger.warning("Resposta de safety filter detectada: %s", response[:100])
+        return "Desculpe, não consegui processar sua mensagem. Pode reformular?"
+
+    return response
 
 
 def _message_text(message) -> str:

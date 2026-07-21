@@ -1,370 +1,194 @@
-# 💻 Ajuda Tech — Assistente Inteligente para Compra de Computadores
+# Ajuda Tech — Assistente Inteligente para Compra de Computadores
 
-Segue nosso trabalho do Grupo 10 / 12
-Entrega 07/06
+> Projeto do Mini-Projeto Avaliativo — IA para Desenvolvedores (Módulo 2)
 
-Wagner Sousa
-Rafael Santos
-Rafael 
-Gisele Tavares
-Luan Rodrigues
+## Integrantes
 
-Apresentação:
-https://gamma.app/docs/Untitled-gqu51wdlkr5cbnw?mode=doc
+- Wagner Sousa
+- Rafael Santos
+- Rafael
+- Gisele Tavares
+- Luan Rodrigues
 
-Repositório:
-https://github.com/SCTECH-ATIVIDADES/ajuda.tech
+## Links
 
-Video:
-https://www.youtube.com/watch?v=z0OYyr210F8
-
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-5.x-092E20?style=for-the-badge&logo=django&logoColor=white)
-![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM_API-412991?style=for-the-badge)
-![JavaScript](https://img.shields.io/badge/JavaScript-ESM-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Vitest](https://img.shields.io/badge/Vitest-Tests-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-![Dev_Container](https://img.shields.io/badge/Dev%20Container-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
-> Ajuda Tech é uma aplicação web com IA integrada que ajuda usuários leigos a encontrarem o computador ideal de acordo com sua necessidade e orçamento, sem exigir conhecimento técnico.
-
-<img width="1079" height="821" alt="image" src="https://github.com/user-attachments/assets/b5b4b107-5f0e-4838-ba09-a8de4c43bdda" />
+- [Apresentação (Gamma)](https://gamma.app/docs/Untitled-gqu51wdlkr5cbnw?mode=doc)
+- [Repositório](https://github.com/SCTECH-ATIVIDADES/ajuda.tech)
+- [Vídeo explicativo](https://www.youtube.com/watch?v=z0OYyr210F8)
 
 ---
 
-## 🎯 Sobre o Projeto
+## 1. Problema
 
-Muitas pessoas têm dificuldade em escolher um computador porque não entendem as especificações técnicas. O Ajuda Tech resolve isso com uma conversa simples: o usuário descreve o que quer fazer com o computador e a IA recomenda a melhor opção.
+Muitas pessoas têm dificuldade em escolher um computador porque não entendem as especificações técnicas. Elas precisam de ajuda para traduzir suas necessidades reais (estudar, trabalhar, jogar) em uma compra adequada ao seu orçamento.
 
-URL do Board 1:
-https://github.com/orgs/SCTECH-ATIVIDADES/projects/1
+## 2. Objetivo do Agente
 
-URL do Board 2 (fork):
-https://github.com/users/wagner-sousa/projects/4/views/1
+O **Herbert** é um agente conversacional que conduz o usuário em uma coleta guiada de informações e recomenda o computador ideal (notebook ou desktop) com base em um catálogo de produtos reais.
 
-Obs: fizemos um fork para separar as fases do projeto mas a separação ficou por data mesmo. A partir do dia 22/05 começamos a trabalhar na Fase 2.
+- **Entrada:** mensagem do usuário descrevendo o que precisa
+- **Saída:** recomendação personalizada de produto do catálogo + relatório em Markdown
 
-### Funcionalidades
+## 3. Fluxo com LangGraph
 
-- Chat interativo com IA para coleta de necessidades do usuário
-- Recomendação personalizada de PC ou Notebook com base no perfil do usuário
-- Explicações em linguagem simples, sem jargões técnicos
-- Histórico de conversas por sessão
-- Interface web responsiva e acessível
-- Preview isolado do frontend sem depender do Django
-- Suporte a tema claro/escuro e renderização segura de Markdown no chat
+O agente é implementado com **LangGraph** (StateGraph), organizado em 6 nós com roteamento condicional:
 
-## 📦 Pré-requisitos
+```
+START → classify_msg → [greet | gather_needs | recommend]
+                           ↓              ↓
+                         END     [recommend | respond]
+                                       ↓
+                                  report → respond → END
+```
 
-- Python 3.12 ou superior — verifique com `python --version`
-- pip — recomendado usar `python -m pip --version`
-- Node.js e npm para testes e preview do frontend — verifique com `node --version` e `npm --version`
-- Chave de API do provedor de LLM para executar a integração com IA, obtida em [OpenRouter](https://openrouter.ai)
-- Docker e VS Code Dev Containers, se quiser rodar o projeto no ambiente containerizado de desenvolvimento
+### Nós do grafo
 
----
+| Nó | Função |
+|----|--------|
+| `classify_msg` | Classifica a intenção do usuário (saudação, dados, pergunta, recomendação) |
+| `greet` | Responde cumprimentos e inicia a conversa |
+| `gather_needs` | Extrai necessidades do usuário (propósito, orçamento, mobilidade) |
+| `recommend` | Busca produtos no catálogo e gera recomendação personalizada |
+| `report` | Gera relatório estruturado em Markdown com a recomendação |
+| `respond` | Monta a resposta final ou faz perguntas para coletar dados faltantes |
 
-## 🚀 Instalação
+### Estado compartilhado
 
-### Ambiente local
+```python
+class AgentState(TypedDict):
+    messages: Annotated[list, add_messages]  # Histórico da conversa
+    user_needs: dict                         # propósito, orçamento, mobilidade, prioridades
+    products_found: list                     # Produtos encontrados pela tool
+    stage: str                               # Etapa atual do fluxo
+    recommendation: str                      # Texto da recomendação
+    report: str                              # Relatório em Markdown
+    classified_intent: str                   # Intenção classificada
+```
 
-#### Clone o repositório
+## 4. Ferramentas Integradas
+
+O agente utiliza **3 ferramentas** (tools) registradas via LangChain `@tool`:
+
+| Tool | Descrição |
+|------|-----------|
+| `buscar_produtos` | Lê o catálogo `produtos.json` e filtra por categoria (notebook/desktop) e orçamento máximo |
+| `comparar_produtos` | Compara especificações de dois produtos pelo ID |
+| `gerar_relatorio` | Gera relatório em Markdown com nome, preço, specs e justificativa |
+
+A principal ferramenta usada no fluxo é `buscar_produtos`, chamada pelo nó `recommend`.
+
+## 5. Memória e Contexto
+
+- O histórico de conversa é mantido na **sessão Django** (`request.session`)
+- A cada mensagem, o histórico (últimas 20 mensagens) é injetado no estado `AgentState.messages`
+- As necessidades extraídas (`user_needs`) persistem entre mensagens via sessão
+- O LangGraph usa `Annotated[list, add_messages]` para acumular mensagens automaticamente
+
+## 6. Segurança
+
+- Chaves de API ficam apenas em `.env` (excluído do Git via `.gitignore`)
+- `.env.example` contém apenas nomes das variáveis, sem valores reais
+- Nenhuma credencial versionada no repositório
+- Proteção CSRF em todos os formulários Django
+- Não são coletados dados pessoais sensíveis
+
+## 7. Como Executar
+
+### Pré-requisitos
+- Python 3.12+
+- Chave de API do [OpenRouter](https://openrouter.ai)
+
+### Instalação
 
 ```bash
 git clone https://github.com/SCTECH-ATIVIDADES/ajuda.tech.git
 cd ajuda.tech
-```
-
-# Este projeto utiliza a IDE VSCode com extensão de Dev Containers para facilitar o setup
-Dev Containers 0.459.1 in VS Code 1.123.0 
-
-## Crie um container Docker com extensão no VSCode 
-Instalar a extensão Dev Containers  e ativar no projeto antes de criar o ambiente virtual, para evitar conflitos de dependências. Façpa manualmente ou peça para sua IA assistente criar o container e abrir o projeto dentro dele. O container já tem Python 3.12 e Node.js pré-instalados, além de configurar o ambiente virtual e instalar as dependências automaticamente.
-
-### Crie e ative o ambiente virtual no docker 
-
-```bash
 python -m venv venv
-```
-
-No Windows:
-
-```bash
-python -m venv venv
-```
-Depois:
-
-```bash
-venv\Scripts\activate
-```
-
-#### Instale as dependências do backend
-
-```bash
+source venv/bin/activate
 python -m pip install -r requirements.txt
-```
-
-#### Crie o arquivo de ambiente
-
-```bash
-cp .env.example .env
-```
-
-Depois, edite o arquivo `.env` com os valores do seu ambiente e chave da sua LLM escolhida.
-
-
-#### Inicie o servidor de desenvolvimento
-
-```bash
+cp .env.example .env   # edite com sua LLM_API_KEY
+python manage.py migrate
 python manage.py runserver
 ```
 
-Acesse em: `http://localhost:8000`
+Acesse: `http://localhost:8000`
 
-### Dev Container com Docker
-
-O projeto inclui configuração de desenvolvimento em container por meio de [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) e [.devcontainer/Dockerfile](.devcontainer/Dockerfile).
-
-#### Requisitos para usar o Dev Container
-
-- Docker em execução na máquina
-- VS Code com a extensão Dev Containers
-
-#### Como abrir o projeto no container
-
-1. Clone o repositório.
-2. Abra a pasta `ajuda.tech` no VS Code.
-3. Execute o comando `Dev Containers: Reopen in Container`.
-4. Aguarde o `postCreateCommand` instalar automaticamente as dependências Python e Node.
-5. Inicie a aplicação com `python manage.py runserver`.
-
-### Frontend do chat (preview local, sem Django)
+### Com Docker
 
 ```bash
-npm install
-npm test
-npx serve chat/static/chat
+docker compose up --build
 ```
 
-Abra a URL exibida (ex.: `http://localhost:3000`) para ver a página de chat com API mockada.
+Acesse: `http://localhost:8001`
 
----
-
-## ⚙️ Variáveis de Ambiente
-
-```env
-SECRET_KEY=sua_chave_secreta_django
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-LLM_API_KEY=sua_chave_de_api_da_ia
-LLM_PROVIDER=openai
-LLM_MODEL=deepseek/deepseek-v4-flash:free
-LLM_TIMEOUT=30
-SITE_URL=http://localhost:8000
-SITE_NAME=Ajuda Tech
-LOG_LEVEL=INFO
-```
-
-O repositório não deve receber chaves reais. Use o `.env.example` como base e ajuste os valores conforme seu ambiente.
-
-O token usado em `LLM_API_KEY` deve ser gerado na sua conta em [OpenRouter](https://openrouter.ai).
-
----
-
-## 🧪 Testes
-Atualize as depedências e rode os testes com:
+### Testes
 
 ```bash
-npm install
+pytest              # backend
+npm test            # frontend
 ```
 
-### Backend
+## 8. Exemplo de Entrada e Saída
 
-```bash
-pytest
+Veja [docs/exemplos_execucao.md](docs/exemplos_execucao.md) para exemplos detalhados de conversas com o agente.
+
+**Resumo rápido:**
+
+```
+Usuário: oi
+Herbert: Olá! Me chamo Herbert e vou te ajudar a encontrar o computador
+perfeito para você. Me conta: para que você pretende usar o computador?
+
+Usuário: quero um notebook pra estudar
+Herbert: Ótimo! E qual é o seu orçamento aproximado?
+
+Usuário: até 3000 reais
+Herbert: Com R$ 3.000 você consegue um notebook ótimo para estudos!
+O Samsung Book i3 é uma ótima opção — processador Intel Core i3,
+8 GB de memória e tela de 15.6". Perfeito para navegar, usar o
+Office e assistir aulas. Ele custa R$ 2.799,00 e vai atender
+muito bem o que você precisa.
 ```
 
-### Frontend
+## 9. Decisões Tomadas
 
-```bash
-npm test
-```
+- **LangGraph sobre abordagem procedural:** escolhemos o framework porque permite visualizar o fluxo do agente como um grafo, facilitando manutenção e testes
+- **OpenRouter como provedor:** permite testar diferentes modelos LLM sem trocar o código
+- **Catálogo JSON local:** produto simples, sem necessidade de banco de dados para o catálogo
+- **Sessão Django para memória:** evita persistência desnecessária, mantendo dados apenas durante a sessão do usuário
+- **Roteamento condicional:** classifica a intenção do usuário antes de decidir o próximo nó, reduzindo chamadas LLM desnecessárias
 
-### Modo watch para os testes JS
+## 10. Limitações
 
-```bash
-npm run test:watch
-```
+- **Limite de requests:** a conta free tier do OpenRouter permite ~50 requests/dia
+- **Qualidade do modelo:** modelos gratuitos podem expor raciocínio interno (chain-of-thought), que é filtrado pelo código
+- **Simplicidade do catálogo:** apenas 12 produtos; em produção seria necessário um banco de dados
+- **Sem persistência entre sessões:** ao fechar o navegador, o histórico é perdido
+- **Safety filters:** alguns modelos retornam respostas bloqueadas por filtros de segurança; o código trata esses casos
 
-Os testes JavaScript usam Vitest com ambiente `jsdom`, e os testes Python usam `pytest` com configuração definida em `pytest.ini`.
-
----
-
-## 🌐 Endpoints Principais
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| GET | / | Renderiza o chat e inicia uma nova sessão |
-| POST | /send/ | Recebe a mensagem do usuário e retorna a resposta da IA |
-| POST | /recommend/ | Retorna uma recomendação estruturada com produtos |
-
----
-
-## 📁 Estrutura do Projeto
-
-### Visão simplificada
+## Estrutura do Projeto
 
 ```shell
 ajuda.tech/
-├── .devcontainer/
-├── ajuda_tech/
+├── ajuda_tech/          # Configurações Django
 ├── chat/
-│   ├── static/chat/
-│   │   ├── css/
-│   │   └── js/
-│   ├── templates/chat/
-│   ├── tests/
-│   ├── prompts.py
-│   ├── services.py
-│   ├── urls.py
-│   └── views.py
-├── core/
-├── docs/
-├── logs/
-├── manage.py
-├── package.json
-├── pytest.ini
-├── requirements.txt
+│   ├── agent/
+│   │   ├── graph.py     # Grafo LangGraph (StateGraph + nós + edges)
+│   │   ├── nodes.py     # Funções de cada nó do grafo
+│   │   ├── state.py     # AgentState (TypedDict)
+│   │   └── tools.py     # Ferramentas: buscar_produtos, comparar_produtos, gerar_relatorio
+│   ├── static/chat/     # Frontend (JS modular + CSS)
+│   ├── templates/chat/  # Template Django
+│   ├── tests/           # Testes backend (pytest)
+│   ├── prompts.py       # System Prompts do agente
+│   ├── services.py      # Cliente OpenRouter
+│   ├── views.py         # Endpoints Django
+│   └── urls.py          # Rotas
+├── core/                # Landing page
+├── docs/                # Documentação do projeto
+├── produtos.json        # Catálogo de produtos (12 itens)
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
 └── README.md
 ```
-
-### Diagrama do Ecossistema
-
-O diagrama abaixo representa a arquitetura completa do Ajuda Tech, incluindo frontend, backend, banco de dados, integração com API externa, infraestrutura e documentação:
-
-```mermaid
-graph TB
-    subgraph "🌐 Frontend (Navegador)"
-        CHAT_HTML["chat.html<br/>(Django Template)"]
-        INDEX_HTML["index.html<br/>(Preview Standalone)"]
-        CSS["chat.css<br/>(Estilos + Temas)"]
-        JS_APP["chatApp.js<br/>(Orquestrador)"]
-        JS_API["chatApi.js<br/>(HTTP + CSRF)"]
-        JS_UI["chatUi.js<br/>(DOM)"]
-        JS_STATE["chatState.js<br/>(Estado)"]
-        JS_THEME["chatTheme.js<br/>(Dark/Light)"]
-        LIBS["marked + DOMPurify<br/>(Markdown Seguro)"]
-        TESTS_JS["Testes Vitest<br/>(7 arquivos .test.js)"]
-    end
-
-    subgraph "🐍 Backend Django"
-        subgraph "Config"
-            SETTINGS["settings.py<br/>(Apps, Middleware, DB, LLM)"]
-            ROOT_URLS["urls.py<br/>(Raiz → chat.urls)"]
-            WSGI["wsgi.py"]
-        end
-        subgraph "App: chat"
-            VIEWS["views.py<br/>ChatView | SendMessageView | RecommendView"]
-            URLS_CHAT["urls.py<br/>/ | /send/ | /recommend/"]
-            SERVICES["services.py<br/>OpenRouterClient"]
-            PROMPTS["prompts.py<br/>System Prompts (Herbert)"]
-            MODELS["models.py<br/>Conversation + Message"]
-            EXCEPTIONS["exceptions.py<br/>AuthError | RateLimitError | ServiceUnavailable"]
-            ADMIN["admin.py<br/>(Desabilitado)"]
-            TEMPLATES["templates/chat/chat.html"]
-            TESTS_PY["tests/<br/>test_models | test_views<br/>test_services | test_prompts | test_limits"]
-        end
-        subgraph "App: core"
-            CORE_VIEWS["views.py<br/>IndexView (TemplateView)"]
-            CORE_URLS["urls.py<br/>(Não roteado)"]
-            CORE_TEMPLATE["templates/core/index.html"]
-        end
-        DJANGO_MGMT["manage.py"]
-    end
-
-    subgraph "🗄️ Banco de Dados"
-        SQLITE[("db.sqlite3<br/>SQLite")]
-        SESSION_DB[("Sessões<br/>Cookies Assinados")]
-    end
-
-    subgraph "☁️ API Externa"
-        OPENROUTER["OpenRouter API<br/>api.openrouter.ai/v1/chat/completions"]
-        LLM_MODEL["Modelo LLM<br/>DeepSeek"]
-    end
-
-    subgraph "⚙️ Infraestrutura"
-        GIT["Git + GitHub"]
-        CI_CD["GitHub Actions<br/>test (pytest) | frontend-test (vitest)"]
-        ENV[".env<br/>LLM_API_KEY, SECRET_KEY, DEBUG"]
-        REQS["requirements.txt<br/>Django, decouple, requests"]
-        PACKAGE["package.json<br/>vitest, dompurify, marked"]
-        DEVCONTAINER[".devcontainer<br/>Dockerfile + devcontainer.json"]
-    end
-
-    subgraph "📚 Documentação"
-        README["README.md"]
-        DOCS["docs/<br/>PRD, User Stories, Diagramas"]
-        PROMPTS_DOC["prompts/<br/>Histórico de Prompts"]
-        PROMPTS_MINI["prompts-mini-projeto/<br/>Sessões Anteriores"]
-    end
-
-    CHAT_HTML -->|"Renderiza"| JS_APP
-    JS_APP -->|"Importa"| JS_API
-    JS_APP -->|"Importa"| JS_UI
-    JS_APP -->|"Importa"| JS_STATE
-    JS_APP -->|"Importa"| JS_THEME
-    JS_APP -->|"Usa"| LIBS
-    CHAT_HTML -->|"Carrega"| CSS
-
-    JS_API -->|"POST /send/ (JSON + CSRF)"| VIEWS
-
-    ROOT_URLS -->|"include"| URLS_CHAT
-    VIEWS -->|"Chama"| SERVICES
-    SERVICES -->|"Lê"| PROMPTS
-    SERVICES -->|"Lança"| EXCEPTIONS
-    VIEWS -->|"Renderiza"| TEMPLATES
-    SETTINGS -->|"Configura"| VIEWS
-    SETTINGS -->|"Configura"| SERVICES
-
-    CORE_VIEWS -.->|"⚠️ Não roteado"| CORE_URLS
-    CORE_VIEWS -->|"Renderiza"| CORE_TEMPLATE
-
-    VIEWS -->|"Sessões"| SESSION_DB
-    DJANGO_MGMT -->|"manage.py migrate"| SQLITE
-
-    SERVICES -->|"HTTP POST<br/>Bearer Token"| OPENROUTER
-    OPENROUTER -->|"Roteia"| LLM_MODEL
-
-    GIT -->|"Push"| CI_CD
-    CI_CD -->|"Roda"| TESTS_PY
-    CI_CD -->|"Roda"| TESTS_JS
-    ENV -->|"Alimenta"| SETTINGS
-    REQS -->|"Instala"| DJANGO_MGMT
-
-    DOCS -.->|"Referencia"| README
-    PROMPTS_DOC -.->|"Alimenta"| PROMPTS
-```
-
----
-
-## 🧭 Desenvolvimento
-
-- O backend expõe as rotas principais em `chat/urls.py`.
-- O frontend do chat fica em `chat/static/chat/` com JavaScript modular.
-- O projeto usa sessões em cookies assinados para manter o estado da conversa.
-- Os logs são gravados em `logs/app.log` e `logs/errors.log` com rotação de arquivos.
-
----
-
-## 🤝 Contribuindo
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas alterações (`git commit -m 'feat: adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
-
----
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.

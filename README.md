@@ -11,11 +11,19 @@ Grupo Dupla
 Gisele Tavares
 Wagner Sousa
 
+Plano:
+docs\MODULO2_LANGGRAPH_EVOLUCAO.md
+
+Prompts: 
+docs\prompts_modulo2*
+
+
 Slides:
 https://gamma.app/docs/Ajuda-Tech-Problema-e-Solucao-r9t5jfg1cwkiv0e
 
 Repositório:
 https://github.com/SCTECH-ATIVIDADES/ajuda.tech
+
 
 ## Integrantes
 

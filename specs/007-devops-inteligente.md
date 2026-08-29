@@ -1,69 +1,47 @@
 # Spec 007 — DevOps inteligente
 
-## Resumo das lacunas
+## Objetivo
 
-- CI roda Python, mas job Vitest está comentado.
-- Lint, build/validação e verificação de deploy não formam gate completo.
-- Não há análise de logs de duas etapas com anomalia e tendência/risco.
-- Deploy Docker usa `runserver` e não está pronto para produção.
+Criar gate de CI reproduzível e análise de logs por IA com anomalia, tendência simples e risco.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Ativar CI frontend e definir comandos reais de lint, testes e build/validação.
-2. Adicionar migração/checks Django e cobertura ao pipeline.
-3. Rodar testes sem credenciais externas.
-4. Adicionar validação de configuração de produção sem expor segredos.
-5. Substituir `runserver` por servidor apropriado ou documentar claramente escopo de demo.
-6. Criar fixture de logs de pelo menos duas etapas do agente.
-7. Usar IA para identificar anomalia, estimar tendência simples e classificar risco.
-8. Registrar método, dados, limites e conclusão humana.
+Workflow está em `.github/workflows/ci.yml`; comandos devem vir de `package.json`, `requirements.txt` e configurações existentes. Docker usa arquivos raiz.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Descomentar/corrigir job Vitest.
-- [ ] Confirmar lint Python/JS existente ou adicionar somente ferramenta necessária.
-- [ ] Adicionar build/collectstatic/check deploy conforme ambiente.
-- [ ] Corrigir Dockerfile/Compose para execução reproduzível.
-- [ ] Criar fixture de logs correlacionados.
-- [ ] Criar análise de anomalia e tendência.
-- [ ] Publicar artefatos de CI.
+Alterar workflow, Dockerfile/Compose somente se necessário, package/config de lint, script/fixture de análise e README.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Qual servidor será usado em produção?
-- Build frontend existe ou validação é somente Vitest?
-- Análise de logs será script Python, notebook ou workflow externo?
-- Qual limiar define anomalia e risco aceitável?
+1. Inspecionar comandos reais antes de ativar jobs.
+2. Fazer CI executar lint, testes backend, testes frontend e build/validação equivalente; não depender de LLM/rede externa.
+3. Adicionar migração/checks Django e cobertura existente.
+4. Corrigir execução Docker mínima reproduzível; não prometer produção se não houver servidor adequado.
+5. Usar fixture com duas etapas e dados suficientes.
+6. Pedir IA para detectar anomalia, calcular tendência simples explicitando método/limite/incerteza e classificar risco.
+7. Salvar prompt, dados anonimizados, resposta, validação humana e artefatos CI.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- CI bloqueia merge quando lint, testes ou validação falham.
-- Backend e frontend executam em CI.
-- Pipeline não depende de LLM ou rede externa para testes.
-- Logs de duas etapas são analisados por IA com anomalia, tendência e risco.
-- Análise informa dados usados e incerteza.
-- Artefatos e status do CI ficam acessíveis como evidência.
+CI verde, falha controlada de gate e execução local equivalente. Análise reproduzível com fixture.
 
-## Arquivos afetados
+## Aceite
 
-- `.github/workflows/ci.yml`
-- `Dockerfile`
-- `docker-compose.yml`
-- `package.json`
-- Configuração de lint/build existente
-- Novo script/fixture de análise
-- `README.md`
+Merge bloqueado por lint/teste/validação; backend/frontend no CI; análise informa dados e incerteza; artefatos acessíveis.
 
-## Evidências esperadas
+## Bloqueios
 
-- Run verde do CI.
-- Run vermelho controlado mostrando gate.
-- Logs de duas etapas.
-- Saída da análise IA.
-- Imagem ou link do pipeline e artefatos.
+GitHub Actions privado, IA externa ou deploy real são evidências humanas/externas; marcar `BLOCKED` sem simular.
 
-## Dependências
+## Evidências
 
-- [005](005-observabilidade-resiliencia.md)
-- [006](006-qa-com-ia.md)
-- [009](009-readme-evidencias.md)
+Runs verde/vermelho, logs, saída IA e risco/tendência.
+
+## Saída
+
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`008`.

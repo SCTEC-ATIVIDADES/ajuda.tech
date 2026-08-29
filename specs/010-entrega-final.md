@@ -1,70 +1,48 @@
 # Spec 010 — Entrega final
 
-## Resumo das lacunas
+## Objetivo
 
-- Não há evidência comprovada de GitHub Project Kanban.
-- Branches `develop`, `feature/*` e `main` não estão comprovadas.
-- Vídeo final e roteiro ainda não estão reunidos.
-- Dois cenários obrigatórios, normal e risco/falha, não estão fechados.
-- Commits semânticos e rastreabilidade final precisam ser conferidos.
+Fechar entrega reproduzível, com versão única, dois cenários, evidências externas e submissão conforme prazo.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Criar/organizar GitHub Project com colunas backlog, fazendo, revisão e concluído.
-2. Garantir branches e pull requests rastreáveis, sem reescrever histórico necessário.
-3. Usar commits semânticos nas alterações finais.
-4. Preparar cenário normal: usuário informa necessidade, agente coleta contexto, executa grafo, consulta tools e responde.
-5. Preparar cenário de risco/falha: injection, timeout, serviço indisponível ou limite excedido.
-6. Gravar vídeo de até 10 minutos, máximo 12, mostrando produto, arquitetura, execução, evidências e análise crítica.
-7. Validar links, permissões, vídeo não listado e prazo de submissão.
-8. Montar pacote final conforme regras do curso.
+Esta spec executa ações no GitHub e fora do código. Agente pode validar arquivos e preparar roteiro, mas não inventar acesso, vídeo, Kanban ou submissão.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Conferir branch base e branches de trabalho.
-- [ ] Organizar Kanban.
-- [ ] Fechar dois roteiros reproduzíveis.
-- [ ] Gravar vídeo.
-- [ ] Revisar pacote e tamanho.
-- [ ] Verificar links em janela anônima.
-- [ ] Fazer submissão antes de 31/08/2026 15h.
+`README.md`, `docs/`, `specs/`, `.github/` e metadados Git autorizados; GitHub Project, branches, PRs, vídeo e AVA exigem acesso humano quando indisponível.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Onde será hospedado o vídeo e quem poderá vê-lo?
-- Avaliador terá acesso ao GitHub Project privado?
-- Entrega exige ZIP, link ou ambos?
-- Quais integrantes e créditos devem aparecer no vídeo?
+1. Conferir `main`, `develop`, `feature/*`, PRs e commits semânticos sem reescrever histórico.
+2. Atualizar Kanban com tarefa, responsável/status e links.
+3. Fechar roteiro normal: necessidade → coleta → grafo → tool → memória → resposta.
+4. Fechar roteiro de risco: injection, timeout, serviço indisponível ou rate limit → fallback/sinal seguro.
+5. Gravar vídeo não listado, recomendado até 10 e máximo 12 minutos, cobrindo rubrica.
+6. Conferir README, código, testes, CI, workflow e vídeo apontam para mesma versão.
+7. Testar links em janela anônima, pacote/tamanho e instruções limpas.
+8. Submeter antes de 31/08/2026 às 15h e congelar repositório.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Kanban mostra tarefas, responsáveis/status e histórico.
-- Branches e commits comprovam desenvolvimento rastreável.
-- Vídeo não listado respeita duração máxima e cobre rubrica.
-- Cenário normal funciona com evidência.
-- Cenário de risco falha de modo seguro e deixa sinais observáveis.
-- README, código, testes, CI, workflow e vídeo apontam para a mesma versão.
-- Pacote final abre, executa ou possui instruções válidas.
+Validar links, comandos de reprodução, dois cenários, pacote final e consistência entre código, README, CI e vídeo. Sem acesso externo, registrar `BLOCKED`.
 
-## Arquivos afetados
+## Aceite
 
-- `README.md`
-- `specs/`
-- `docs/`
-- `.github/`
-- GitHub Project, branches, tags e pull requests
-- Roteiro e vídeo fora do repositório
+Kanban, branches e commits são rastreáveis; dois cenários reproduzíveis; vídeo cobre aplicação e evidências; pacote abre/executa ou explica; riscos e limitações declarados.
 
-## Evidências esperadas
+## Bloqueios
 
-- URL do Project.
-- Histórico de branches/PRs/commits.
-- Vídeo não listado.
-- Capturas dos cenários.
-- Checklist final assinado/revisado.
-- Pacote ou link de submissão.
+Sem acesso a GitHub Project, YouTube, AVA ou conta do curso: `BLOCKED`, com ação humana e checklist restante. Não marcar submissão feita.
 
-## Dependências
+## Evidências
 
-- [009](009-readme-evidencias.md)
-- Todas as implementações e evidências anteriores.
+URL do Project, histórico Git, vídeo, capturas dos cenários, checklist revisado e comprovante de submissão.
+
+## Saída
+
+Relatório `DONE` somente com links verificados e prazo confirmado; caso contrário `PARTIAL` ou `BLOCKED`.
+
+## Próximo
+
+Ação humana: submeter e congelar versão.

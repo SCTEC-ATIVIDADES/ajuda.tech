@@ -1,67 +1,47 @@
 # Spec 006 — QA com IA
 
-## Resumo das lacunas
+## Objetivo
 
-- Não há evidência de IA usada em code review de alteração real.
-- Não há geração e refinamento documentados de testes por IA.
-- Testes de integração/aceitação/E2E não estão organizados como evidência de risco.
-- Não há priorização formal por risco.
+Produzir prova de code review com IA e testes gerados/refinados para riscos reais, incluindo integração ou aceitação.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Escolher uma alteração real do projeto, preferencialmente rate limit, injection ou fluxo paralelo.
-2. Usar IA para revisar diff, registrar achados e decisão humana.
-3. Pedir geração de testes a partir dos critérios de aceite.
-4. Revisar testes, corrigir casos incompletos e registrar refinamentos.
-5. Separar testes unitários, integração endpoint/grafo e aceitação do fluxo.
-6. Priorizar riscos: segurança, perda de contexto, falha externa, regressão de UX e custo.
-7. Executar suíte e anexar resultados ao README.
+Alterações anteriores devem existir no histórico local. Testes backend ficam em `chat/tests/`, frontend em `chat/static/chat/js/`; CI em `.github/workflows/ci.yml`.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Selecionar PR/commit real.
-- [ ] Salvar prompt e resposta de code review.
-- [ ] Registrar achados aceitos e rejeitados.
-- [ ] Gerar testes com IA.
-- [ ] Refinar testes com revisão humana.
-- [ ] Adicionar integração/aceitação/E2E de maior risco.
-- [ ] Criar matriz risco → teste → evidência.
+Código de teste e alteração real escolhida, CI se necessário, `README.md` e diretório de evidências definido em `009`. Não fabricar review retroativo.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- IA será usada via ferramenta local, revisão de PR ou modelo externo?
-- Qual alteração fornece melhor evidência sem inventar trabalho?
-- E2E precisa navegador real ou teste de endpoint cobre aceitação?
-- Quais riscos recebem bloqueio obrigatório no CI?
+1. Selecionar commit/PR real de 001–005.
+2. Executar IA sobre diff; salvar prompt, resposta, data, modelo e decisão humana sem segredos.
+3. Registrar achados aceitos, rejeitados e correções.
+4. Pedir testes derivados dos critérios de aceite; revisar manualmente e refinar.
+5. Adicionar teste de integração endpoint/grafo e aceitação/E2E mínima sem rede externa.
+6. Criar matriz risco → teste → evidência e priorizar segurança, contexto, falha externa, UX e custo.
+7. Rodar suíte completa e cobertura disponível.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Existe alteração real revisada por IA, com diff e registro.
-- Review identifica pelo menos riscos relevantes e decisões humanas ficam documentadas.
-- IA gera testes que são executados e refinados.
-- Há testes além de unidade para fluxo principal e falha.
-- Cada risco crítico possui teste ou justificativa explícita.
-- Resultado da suíte passa sem depender de API externa.
+Teste novo falha quando comportamento crítico quebra; integração cobre cenário normal e falha; frontend cobre resposta/erro se fluxo tocar UI.
 
-## Arquivos afetados
+## Aceite
 
-- Código da alteração escolhida.
-- `chat/tests/`
-- `chat/static/chat/js/*.test.js`
-- `.github/workflows/ci.yml`
-- `README.md`
-- `docs/` ou diretório de evidências definido em [009](009-readme-evidencias.md)
+Diff real revisado, geração e refinamento rastreáveis, riscos críticos testados ou justificados, suíte sem API externa.
 
-## Evidências esperadas
+## Bloqueios
 
-- Diff revisado.
-- Prompt/resposta da IA.
-- Matriz de riscos.
-- Testes gerados, refinados e resultado de execução.
-- Relatório de cobertura e falhas corrigidas.
+Se não houver ferramenta IA acessível, marcar evidência de review como `BLOCKED`; não atribuir texto humano à IA.
 
-## Dependências
+## Evidências
 
-- [004](004-seguranca-governanca.md)
-- [005](005-observabilidade-resiliencia.md)
-- [007](007-devops-inteligente.md)
+Diff, prompt/resposta, matriz, testes e resultados.
+
+## Saída
+
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`007`.

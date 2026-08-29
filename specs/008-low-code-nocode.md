@@ -1,64 +1,47 @@
 # Spec 008 — Low-code/no-code
 
-## Resumo das lacunas
+## Objetivo
 
-- Não há automação low-code/no-code comprovada.
-- Falta trigger, integração real e saída observável.
-- Não há documentação de limites, falha ou governança da automação.
+Entregar automação demonstrável com trigger, integração real, saída observável e falha rastreável.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Escolher plataforma acessível para demonstração, como n8n, Make, Zapier ou GitHub Actions visualizado como workflow, conforme regra do curso.
-2. Definir trigger reproduzível: webhook, issue, formulário ou evento de CI.
-3. Integrar com Ajuda Tech ou serviço externo real.
-4. Produzir saída observável: issue, mensagem, registro, relatório ou atualização de quadro.
-5. Incluir validação de payload, autenticação, timeout e tratamento de falha.
-6. Registrar execução normal e falha.
+A automação não existe no repositório. Pode envolver n8n, Make, Zapier ou serviço permitido pelo curso. Arquivos locais não substituem execução externa real.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Escolher ferramenta e justificar.
-- [ ] Criar workflow com trigger.
-- [ ] Conectar endpoint/serviço real.
-- [ ] Validar payload e segredo do webhook.
-- [ ] Definir saída verificável.
-- [ ] Testar duplicação, falha e retry.
-- [ ] Capturar evidências sem expor credenciais.
+Workflow exportável/capturas, endpoint ou webhook mínimo autorizado, `.env.example` apenas com nomes e evidências em `009`.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Qual plataforma está disponível e permitida no curso?
-- Trigger será webhook de recomendação ou evento do GitHub?
-- Saída deve alimentar Kanban, enviar alerta ou gerar relatório?
-- Onde guardar credenciais e histórico de execução?
+1. Escolher plataforma disponível e permitida; registrar decisão e custo.
+2. Definir trigger reproduzível: webhook, evento de CI, issue ou formulário.
+3. Integrar endpoint/serviço real do projeto.
+4. Validar assinatura/segredo, payload, idempotência, timeout e falha.
+5. Produzir saída visível: issue, relatório, registro ou atualização de quadro.
+6. Executar cenário normal, duplicado e falha; salvar histórico sem segredos.
+7. Exportar workflow ou capturar configuração suficiente para reexecução.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Workflow inicia por trigger reproduzível.
-- Integração chama sistema real e recebe resposta validada.
-- Saída pode ser vista por avaliador sem acesso secreto.
-- Falhas aparecem no histórico e não geram sucesso falso.
-- Workflow não expõe chaves nem dados pessoais.
-- README contém passo a passo e link/captura da execução.
+Executar trigger normal, payload inválido, assinatura inválida, duplicação e falha de integração. Confirmar que falha não produz sucesso falso.
 
-## Arquivos afetados
+## Aceite
 
-- `README.md`
-- `.env.example` somente para nomes de variáveis
-- Endpoint/webhook escolhido no projeto
-- Arquivos exportados do workflow, se plataforma permitir
-- Diretório de evidências definido em [009](009-readme-evidencias.md)
+Trigger inicia workflow; resposta é validada; saída é observável; falha não vira sucesso; credencial e dados pessoais não aparecem; README permite reprodução.
 
-## Evidências esperadas
+## Bloqueios
 
-- Diagrama ou export do workflow.
-- Payload do trigger sem segredo.
-- Histórico de execução normal e falha.
-- Saída criada pela automação.
-- Documentação de autenticação e limites.
+Sem plataforma, conta ou permissão, parar como `BLOCKED` e listar ação humana exata. Não criar falsa evidência com mock.
 
-## Dependências
+## Evidências
 
-- [004](004-seguranca-governanca.md)
-- [005](005-observabilidade-resiliencia.md)
-- [009](009-readme-evidencias.md)
+Export/diagrama, payload sanitizado, histórico normal/falha e saída criada.
+
+## Saída
+
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`009`.

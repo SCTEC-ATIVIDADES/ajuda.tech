@@ -1,64 +1,50 @@
 # Spec 001 — LangGraph completo
 
-## Resumo das lacunas
+## Objetivo
 
-- Grafo não possui paralelização explícita.
-- `extract_context` existe, mas não participa do fluxo.
-- Estado usa tipos amplos e não documenta contrato completo.
-- Não há evidência única de execução sequencial, condicional e paralela.
+Ajustar grafo para demonstrar estado tipado, sequência, ramificação condicional, fan-out/fan-in paralelo e parada segura, sem depender de API real.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Definir fluxo real: classificar entrada, extrair contexto, coletar necessidades, buscar candidatos em paralelo, consolidar, gerar relatório e responder.
-2. Adicionar dois nós independentes de busca, por exemplo filtro por orçamento e filtro por mobilidade, executados em paralelo.
-3. Adicionar nó de consolidação após ambas as buscas.
-4. Registrar `extract_context` apenas se ele tiver responsabilidade distinta e teste próprio.
-5. Tipar estado com `TypedDict`/modelos já disponíveis no projeto, sem duplicar contratos.
-6. Testar cada transição e uma execução ponta a ponta.
-7. Atualizar diagramas e README para refletir grafo real.
+Código atual relevante: `chat/agent/state.py`, `graph.py`, `nodes.py`, `tools.py`. `extract_context` existe; confirmar se deve ser nó. Grafo atual classifica, coleta, recomenda, gera relatório e responde. Não duplicar lógica de catálogo.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Modelar estado final e reducers.
-- [ ] Implementar fan-out/fan-in no grafo.
-- [ ] Integrar `extract_context` ou removê-lo e corrigir docs.
-- [ ] Garantir roteamento seguro para intenção inválida.
-- [ ] Testar execução sequencial, condicional e paralela.
-- [ ] Medir tempo de execução paralela versus sequencial.
+Alterar apenas `chat/agent/state.py`, `chat/agent/graph.py`, `chat/agent/nodes.py`, `chat/agent/tools.py`, testes em `chat/tests/`, `README.md` e `docs/PR_LANGGRAPH_RESUMO.md`.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Paralelização deve usar dois nós de catálogo ou busca de catálogo e validação de requisitos?
-- `extract_context` será nó obrigatório ou função interna de coleta?
-- Estado precisa suportar múltiplos candidatos e erros parciais?
+1. Ler arquivos do escopo e testes existentes.
+2. Definir contrato tipado para candidatos, erros e resultados dos ramos.
+3. Implementar dois trabalhos independentes de catálogo em paralelo e nó de consolidação.
+4. Integrar ou remover `extract_context`; corrigir documentação.
+5. Preservar roteamento de saudação, dados incompletos, recomendação e intenção inválida.
+6. Capturar falha parcial sem descartar ramo saudável.
+7. Registrar ordem/status/duração usando observabilidade existente, sem API real.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Grafo compilado e invocável sem API real nos testes.
-- Estado tipado documentado.
-- Existe sequência de nós, edge condicional e fan-out/fan-in verificável.
-- Falha em ramo paralelo não corrompe outro ramo e produz fallback controlado.
-- Execução registra ordem, duração e resultado de cada nó.
+- Grafo compila e executa com estado fixture.
+- Saudação, coleta, recomendação e intenção inválida.
+- Fan-out/fan-in ocorre e consolida resultados.
+- Falha em um ramo produz fallback controlado.
+- Estado não perde necessidades conhecidas.
 
-## Arquivos afetados
+## Aceite
 
-- `chat/agent/state.py`
-- `chat/agent/graph.py`
-- `chat/agent/nodes.py`
-- `chat/agent/tools.py`
-- `chat/tests/test_agent_nodes.py`
-- Novo teste de grafo em `chat/tests/`
-- `README.md`
-- `docs/PR_LANGGRAPH_RESUMO.md`
+- State tipado documentado.
+- Sequência, edge condicional, paralelização e parada comprováveis por teste.
+- Nenhum teste depende de rede ou chave.
+- README e diagrama refletem código real.
 
-## Evidências esperadas
+## Evidências
 
-- Diagrama atualizado.
-- Log de execução mostrando branches paralelos e consolidação.
-- Teste ponta a ponta.
-- Captura ou gravação do fluxo normal e de erro.
+Salvar saída de testes e log sanitizado de execução em diretório definido pelo agente seguinte; não inventar captura.
 
-## Dependências
+## Saída
 
-- [002](002-tools-integracoes.md)
-- [005](005-observabilidade-resiliencia.md)
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`002`, após testes passarem. Se tool externa for necessária para desenho do grafo, registrar dependência sem bloquear paralelização local.

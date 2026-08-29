@@ -1,71 +1,43 @@
 # Spec 005 — Observabilidade e resiliência
 
-## Resumo das lacunas
+## Objetivo
 
-- Logs não possuem correlação completa por execução.
-- Não há dois sinais correlacionados demonstrados, incluindo logs estruturados.
-- Falta latência por nó, contagem de tokens/custo e métricas de erro.
-- Timeout/retry existem, mas fallback e investigação de execução não estão evidenciados.
+Permitir reconstruir uma execução e demonstrar latência, falha, retry, timeout e fallback com dois sinais correlacionados.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Criar `trace_id` por requisição e `run_id` por execução do grafo.
-2. Emitir logs JSON com evento, etapa, status, duração, erro sanitizado e IDs correlacionados.
-3. Adicionar segundo sinal: métricas ou eventos estruturados agregáveis.
-4. Instrumentar chamada LLM, tools e nós LangGraph.
-5. Definir timeout total, timeout por dependência, retry limitado e fallback local.
-6. Evitar logging de prompt completo, chave, conteúdo sensível e resposta bruta sem necessidade.
-7. Criar cenário de investigação: localizar execução, identificar etapa lenta/falha e concluir causa provável.
+Logging existe em `ajuda_tech/settings.py`; LLM, tools e nós ficam em `chat/services.py`, `chat/agent/` e `chat/views.py`. Não logar prompts completos.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Definir schema de log.
-- [ ] Gerar IDs de correlação.
-- [ ] Medir duração e status por nó.
-- [ ] Registrar retry e fallback.
-- [ ] Expor ou exportar métrica agregada.
-- [ ] Criar script/fixture de análise de logs.
-- [ ] Documentar investigação de uma execução normal e uma falha.
+Alterar settings, views, services, graph, nodes, tools, testes e utilitários/fixtures de observabilidade. Atualizar README apenas para operação.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Segundo sinal será métrica Prometheus, contador em log ou dashboard externo?
-- Logs ficarão em arquivo, stdout ou serviço externo?
-- Fallback deve usar catálogo determinístico sem LLM?
-- Qual p95 será usado como referência de desempenho?
+1. Definir schema JSON: `timestamp`, `trace_id`, `run_id`, `stage`, `event`, `status`, `duration_ms`, `error_type`.
+2. Gerar IDs por request/execução e propagar aos nós/tools.
+3. Instrumentar ordem, duração, retry, timeout, fallback e status.
+4. Escolher segundo sinal mínimo já disponível: contador/métrica agregada ou arquivo estruturado; usar mesmos IDs.
+5. Fixar timeout total e por dependência; retry só para erros recuperáveis.
+6. Criar fixture de execução normal e falha e script determinístico de correlação/análise.
+7. Sanitizar conteúdo e testar ausência de segredo.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Toda execução possui `trace_id` e `run_id`.
-- Logs estruturados permitem reconstruir ordem e duração das etapas.
-- Dois sinais usam IDs comuns e podem ser correlacionados.
-- Timeout não deixa request pendurada indefinidamente.
-- Retry não ocorre em erros não recuperáveis.
-- Falha LLM produz fallback amigável e evento observável.
-- Existe investigação reproduzível de execução normal e falha.
+IDs presentes, ordem/duração, correlação dos dois sinais, timeout sem request pendente, retry limitado, erro não recuperável sem retry e fallback.
 
-## Arquivos afetados
+## Aceite
 
-- `ajuda_tech/settings.py`
-- `chat/views.py`
-- `chat/services.py`
-- `chat/agent/graph.py`
-- `chat/agent/nodes.py`
-- `chat/agent/tools.py`
-- `chat/tests/test_services.py`
-- Novos utilitários/testes de observabilidade
+Investigação identifica execução, etapa lenta/falha e causa provável. Logs são estruturados e úteis sem conteúdo sensível.
 
-## Evidências esperadas
+## Evidências
 
-- Logs JSON reais.
-- Consulta ou script que correlaciona sinais.
-- Tabela de latência por etapa.
-- Execução com timeout/retry/fallback.
-- Relatório de investigação com hipótese e conclusão.
+JSON real sanitizado, tabela de latência, análise normal/falha e comandos reproduzíveis.
 
-## Dependências
+## Saída
 
-- [001](001-langgraph-completo.md)
-- [002](002-tools-integracoes.md)
-- [004](004-seguranca-governanca.md)
-- [007](007-devops-inteligente.md)
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`006`.

@@ -1,64 +1,47 @@
 # Spec 009 — README e evidências
 
-## Resumo das lacunas
+## Objetivo
 
-- README diverge do código em nós, endpoints, histórico, integrantes e paths.
-- Não há mapa completo requisito → implementação → evidência.
-- Prompts, modelo por ambiente e ciclo de refinamento não estão documentados como operação.
-- Evidências de QA, logs, low-code, CI e cenários ainda não estão reunidas.
+Alinhar documentação ao código final e criar matriz requisito → implementação → teste/evidência → status.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Reescrever README a partir do código final, removendo plano antigo e links quebrados.
-2. Documentar objetivo, arquitetura, fluxo, estado, tools, memória, segurança e operação.
-3. Registrar prompt versionado, modelo por ambiente, parâmetros e mudanças de refinamento.
-4. Criar tabela da rubrica com status, link de código, teste e evidência.
-5. Referenciar logs sanitizados, relatórios, CI, workflow low-code e vídeo.
-6. Documentar execução local, demo sem segredo, troubleshooting e limitações conhecidas.
-7. Conferir integrantes, branches, comandos e endpoints.
+README e docs atuais possuem divergências históricas. Implementações de 001–008 e relatórios dos agentes são fonte de verdade; não manter plano descrito como funcional.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Auditar todos links e paths.
-- [ ] Atualizar arquitetura real.
-- [ ] Documentar prompts e modelos por ambiente.
-- [ ] Criar matriz de evidências.
-- [ ] Adicionar cenários normal e risco/falha.
-- [ ] Registrar decisões e limitações.
-- [ ] Revisar README com IA e revisão humana.
+`README.md`, `docs/`, `specs/`, `.env.example` e diretório de evidências existente ou criado somente se necessário. Não alterar código funcional sem abrir bloqueio para spec anterior.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Evidências ficarão no repositório ou em links externos?
-- Quais dados precisam ser anonimizados?
-- README deve apontar vídeo não listado diretamente?
-- Qual formato final exigido para anexos?
+1. Ler código final e todos relatórios anteriores.
+2. Corrigir endpoints, nós, estado, tools, memória, limites, comandos e paths.
+3. Documentar instalação, testes, demo, arquitetura, prompts, modelo por ambiente, refinamentos, segurança e limitações.
+4. Organizar evidências sanitizadas de QA, CI, logs, low-code e cenários.
+5. Montar tabela dos 15 critérios da rubrica com links reais e status `DONE/PARTIAL/BLOCKED`.
+6. Verificar links locais, URLs já fornecidas e instruções em ambiente limpo.
+7. Revisar README com IA e revisão humana; registrar ambas sem credenciais.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- README permite instalar, testar e executar demo sem conhecimento oculto.
-- Todos endpoints, nós e arquivos citados existem.
-- Cada item da rubrica aponta prova verificável.
-- Prompts e ciclo de refinamento estão registrados.
-- Modelo muda por ambiente sem alteração de código sensível.
-- Limitações e riscos são declarados, não mascarados.
+Verificação de links/paths, comandos de instalação/teste e coerência entre README e código.
 
-## Arquivos afetados
+## Aceite
 
-- `README.md`
-- `docs/`
-- `specs/`
-- `.env.example`
-- Arquivos de evidência e links do repositório
+Avaliador entende, configura, executa e verifica solução sem contexto oculto. Nenhum item parcial é mascarado como concluído.
 
-## Evidências esperadas
+## Bloqueios
 
-- README final revisado.
-- Matriz de rastreabilidade.
-- Histórico de prompt/refinamento.
-- Links para CI, Kanban, logs, workflow, testes e vídeo.
+Vídeo, Kanban, permissões e URLs externas sem acesso ficam pendentes e identificados.
 
-## Dependências
+## Evidências
 
-- Todas as specs `001`–`008`.
-- [010](010-entrega-final.md)
+README final, matriz de rastreabilidade, histórico de prompts e links acessíveis.
+
+## Saída
+
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`010`.

@@ -1,64 +1,47 @@
 # Spec 002 — Tools e integrações
 
-## Resumo das lacunas
+## Objetivo
 
-- `comparar_produtos` existe, mas não participa do fluxo principal.
-- Não há integração externa claramente demonstrada via API, MCP, serviço ou webhook.
-- Contratos de entrada/saída e erros das tools não estão formalizados.
+Tornar tools alcançáveis, validadas e demonstráveis, incluindo uma integração externa de leitura com fallback local.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Escolher uma integração externa de baixo risco e leitura, preferencialmente serviço de cotação, consulta de disponibilidade ou endpoint mockado reproduzível.
-2. Isolar chamada em `services.py` ou módulo próprio, mantendo views fora da API.
-3. Definir schema de entrada, saída, timeout, retry limitado e erros normalizados.
-4. Conectar integração a nó do grafo.
-5. Usar `comparar_produtos` em recomendação ou consulta explícita.
-6. Validar catálogo e resposta externa antes de usar dados no prompt.
-7. Testar sucesso, timeout, resposta inválida, 4xx, 5xx e ausência de resultados.
+`chat/agent/tools.py` possui `buscar_produtos`, `comparar_produtos` e `gerar_relatorio`; catálogo está em `produtos.json`; contato OpenRouter fica em `chat/services.py`. Views não devem chamar integração diretamente.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Escolher serviço e registrar justificativa.
-- [ ] Criar contrato tipado da tool.
-- [ ] Adicionar validação de argumentos.
-- [ ] Integrar tool ao grafo.
-- [ ] Implementar fallback sem serviço externo.
-- [ ] Testar erros e dados malformados.
+Alterar `chat/agent/tools.py`, `chat/agent/nodes.py`, `chat/agent/graph.py`, `chat/services.py`, testes correspondentes e `README.md`. Dependência nova somente se inevitável e aprovada no relatório.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Serviço real exige credencial ou pode ser API pública/mock controlado?
-- Integração deve alterar recomendação ou apenas enriquecer relatório?
-- Qual limite de custo e chamadas por execução?
+1. Escolher integração de baixo risco e leitura; preferir endpoint mock/reproduzível se credencial não existir.
+2. Registrar decisão: finalidade, origem, limites e fallback.
+3. Criar contrato tipado, validação de entrada e erro normalizado.
+4. Integrar tool a nó alcançável do grafo e tornar `comparar_produtos` demonstrável.
+5. Validar schema do catálogo e resposta externa antes do prompt.
+6. Aplicar timeout/retry limitado somente onde já houver padrão.
+7. Nunca usar rede nos testes.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Tool recebe somente dados validados.
-- Tool retorna estrutura previsível ou erro estruturado.
-- Agente continua operando quando serviço falha.
-- `comparar_produtos` é alcançável por fluxo demonstrável.
-- Testes não dependem de rede.
-- README documenta integração, limites e fallback.
+Sucesso, argumento inválido, catálogo vazio/malformado, timeout, 4xx, 5xx, resposta externa inválida e fallback.
 
-## Arquivos afetados
+## Aceite
 
-- `chat/agent/tools.py`
-- `chat/agent/nodes.py`
-- `chat/agent/graph.py`
-- `chat/services.py`
-- `chat/tests/test_agent_tools.py`
-- `chat/tests/test_services.py`
-- `requirements.txt` somente se necessário
+Tool recebe dados validados, retorna contrato previsível, falha sem quebrar recomendação e não executa ação destrutiva. README explica integração, limites e fallback.
 
-## Evidências esperadas
+## Bloqueios
 
-- Payload e resposta sanitizados.
-- Teste automatizado da tool.
-- Log de sucesso e falha.
-- Execução da recomendação usando integração.
+Sem serviço ou credencial real, implementar adaptador mock controlado e marcar evidência externa como `BLOCKED`; não fingir integração real.
 
-## Dependências
+## Evidências
 
-- [001](001-langgraph-completo.md)
-- [004](004-seguranca-governanca.md)
-- [005](005-observabilidade-resiliencia.md)
+Payload sanitizado, testes, logs de sucesso/falha e execução do fluxo.
+
+## Saída
+
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`003`.

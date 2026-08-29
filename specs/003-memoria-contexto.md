@@ -1,65 +1,43 @@
 # Spec 003 — Memória e contexto
 
-## Resumo das lacunas
+## Objetivo
 
-- Memória atual depende de cookie assinado e sessão curta.
-- Não há checkpointer/thread ID ou persistência server-side.
-- Janela documentada e janela enviada ao LLM divergem.
-- Não há recuperação de contexto demonstrada entre execuções controladas.
+Garantir continuidade, limites explícitos, nova conversa previsível e contexto seguro durante execução do agente.
 
-## Planejamento detalhado
+## Contexto mínimo atual
 
-1. Separar histórico de conversa, necessidades estruturadas e contexto recuperado.
-2. Definir limites: mensagens armazenadas, mensagens enviadas ao LLM e tamanho de cada mensagem.
-3. Remover limpeza inesperada de sessão em GET, preservando nova conversa em ação explícita.
-4. Escolher persistência mínima: banco Django ou checkpointer compatível com LangGraph.
-5. Associar execução a thread/session ID sem coletar dado pessoal sensível.
-6. Sanitizar e resumir histórico antes do prompt quando necessário.
-7. Testar continuidade, truncamento, nova conversa, sessão expirada e concorrência básica.
+Memória atual usa `request.session` em `chat/views.py`; histórico tem limite declarado divergente; `GET /` pode limpar sessão; não há checkpointer confirmado.
 
-## TODO
+## Escopo autorizado
 
-- [ ] Definir contrato de memória.
-- [ ] Implementar janela LLM máxima de 20 mensagens, ou atualizar requisito com justificativa.
-- [ ] Implementar limite de histórico de 50 entradas.
-- [ ] Corrigir comportamento de `GET /`.
-- [ ] Avaliar persistência server-side/checkpointer.
-- [ ] Documentar retenção e privacidade.
+Alterar `chat/views.py`, `chat/agent/state.py`, `chat/agent/graph.py`, `ajuda_tech/settings.py`, testes de views/limites e `README.md`.
 
-## Dúvidas técnicas em aberto
+## Execução
 
-- Memória entre sessões é obrigatória ou somente contexto durante sessão?
-- Banco SQLite basta para demo ou será usado PostgreSQL?
-- Resumo automático exige chamada LLM adicional?
-- Qual dado deve ser apagado em “nova conversa”?
+1. Inspecionar sessão e testes atuais.
+2. Separar histórico, necessidades estruturadas, thread/run ID e contexto recuperado.
+3. Fixar limites: histórico máximo 50 entradas, janela LLM máxima 20 mensagens e tamanho máximo de mensagem; se mudar, atualizar todas as specs.
+4. Remover limpeza em GET; criar limpeza somente em ação explícita existente ou mínima.
+5. Escolher persistência mínima já disponível; evitar banco/checkpointer novo sem necessidade para aceite.
+6. Não guardar segredos ou dados pessoais sensíveis.
+7. Registrar falha de persistência sem perda silenciosa.
 
-## Critérios de aceite
+## Testes obrigatórios
 
-- Conversa continua entre requisições sem perder necessidades conhecidas.
-- LLM recebe no máximo janela definida.
-- Histórico não ultrapassa limite definido.
-- Nova conversa limpa memória somente após ação explícita.
-- Sessão não contém segredos ou dados pessoais sensíveis.
-- Falha de persistência produz resposta segura, não perda silenciosa sem log.
+Continuidade entre duas requisições, truncamento, nova conversa, sessão expirada, payload grande e ausência de chamada LLM além da janela.
 
-## Arquivos afetados
+## Aceite
 
-- `chat/views.py`
-- `chat/agent/state.py`
-- `chat/agent/graph.py`
-- `ajuda_tech/settings.py`
-- `chat/tests/test_views.py`
-- `chat/tests/test_limits.py`
-- `README.md`
+Necessidades conhecidas sobrevivem; limites são aplicados; recarregar página não apaga conversa; nova conversa limpa explicitamente; falhas são seguras e observáveis.
 
-## Evidências esperadas
+## Evidências
 
-- Teste de continuidade e truncamento.
-- Inspeção de estado antes/depois de duas mensagens.
-- Documentação de retenção.
-- Execução com sessão reiniciada e fallback.
+Estado antes/depois, testes e documentação de retenção/privacidade.
 
-## Dependências
+## Saída
 
-- [001](001-langgraph-completo.md)
-- [004](004-seguranca-governanca.md)
+Usar contrato de `000`: STATUS, arquivos, testes, evidências, decisões e pendências.
+
+## Próximo
+
+`004`.

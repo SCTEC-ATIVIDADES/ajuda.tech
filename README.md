@@ -12,11 +12,7 @@ Gisele Tavares
 Wagner Sousa
 
 Plano:
-docs\MODULO2_LANGGRAPH_EVOLUCAO.md
-
-Prompts: 
-docs\prompts_modulo2*
-
+[docs/MODULO2_LANGGRAPH_EVOLUCAO.md](docs/MODULO2_LANGGRAPH_EVOLUCAO.md)
 
 Slides:
 https://gamma.app/docs/Ajuda-Tech-Problema-e-Solucao-r9t5jfg1cwkiv0e
@@ -54,39 +50,52 @@ O **Herbert** é um agente conversacional que conduz o usuário em uma coleta gu
 
 ## 3. Fluxo com LangGraph
 
-O agente é implementado com **LangGraph** (StateGraph), organizado em 6 nós com roteamento condicional:
+O agente usa `StateGraph` com estado tipado, roteamento condicional, fan-out para consultas independentes ao catálogo e fan-in dos resultados:
 
 ```
-START → classify_msg → [greet | gather_needs | recommend]
-                           ↓              ↓
-                         END     [recommend | respond]
-                                       ↓
-                                  report → respond → END
+START → classify_msg → [greet | gather_needs | prepare_catalog]
+                         ↓          ↓
+                       END       respond
+                                      ↑
+prepare_catalog → Send → catalog_worker → consolidate_catalog
+                                      ↓
+                                 recommend → report → respond → END
 ```
+
+`gather_needs` segue para `prepare_catalog` quando propósito e orçamento existem; caso contrário, segue para `respond`. `extract_context` existe em `nodes.py`, mas não faz parte do grafo atual.
 
 ### Nós do grafo
 
 | Nó | Função |
 |----|--------|
-| `classify_msg` | Classifica a intenção do usuário (saudação, dados, pergunta, recomendação) |
-| `greet` | Responde cumprimentos e inicia a conversa |
-| `gather_needs` | Extrai necessidades do usuário (propósito, orçamento, mobilidade) |
-| `recommend` | Busca produtos no catálogo e gera recomendação personalizada |
-| `report` | Gera relatório estruturado em Markdown com a recomendação |
-| `respond` | Monta a resposta final ou faz perguntas para coletar dados faltantes |
+| `classify_msg` | Classifica a intenção do usuário |
+| `greet` | Responde cumprimentos |
+| `gather_needs` | Extrai e preserva necessidades do usuário |
+| `prepare_catalog` | Cria trabalhos para categorias notebook e desktop |
+| `catalog_worker` | Consulta uma categoria do catálogo por ramo |
+| `consolidate_catalog` | Consolida produtos e registra falhas parciais |
+| `recommend` | Gera recomendação com catálogo consolidado |
+| `report` | Gera relatório estruturado em Markdown |
+| `respond` | Monta resposta final ou pergunta por dados faltantes |
 
 ### Estado compartilhado
 
 ```python
-class AgentState(TypedDict):
-    messages: Annotated[list, add_messages]  # Histórico da conversa
-    user_needs: dict                         # propósito, orçamento, mobilidade, prioridades
-    products_found: list                     # Produtos encontrados pela tool
-    stage: str                               # Etapa atual do fluxo
-    recommendation: str                      # Texto da recomendação
-    report: str                              # Relatório em Markdown
-    classified_intent: str                   # Intenção classificada
+class AgentState(TypedDict, total=False):
+    messages: Annotated[list, add_messages]
+    user_needs: dict[str, object]
+    products_found: list[Product]
+    catalog_jobs: list[CatalogJob]
+    branch_job: CatalogJob
+    catalog_results: Annotated[list[CatalogBranchResult], add]
+    errors: Annotated[list[str], add]
+    stage: str
+    recommendation: str
+    report: str
+    classified_intent: str
 ```
+
+`catalog_results` e `errors` usam reducers para agregar resultados dos ramos. Falha em um `catalog_worker` vira resultado de erro e não impede consolidação dos demais ramos.
 
 ## 4. Ferramentas Integradas
 
@@ -94,28 +103,76 @@ O agente utiliza **3 ferramentas** (tools) registradas via LangChain `@tool`:
 
 | Tool | Descrição |
 |------|-----------|
-| `buscar_produtos` | Lê o catálogo `produtos.json` e filtra por categoria (notebook/desktop) e orçamento máximo |
+| `buscar_produtos` | Lê o catálogo `produtos.json` e filtra por categoria e orçamento máximo |
 | `comparar_produtos` | Compara especificações de dois produtos pelo ID |
 | `gerar_relatorio` | Gera relatório em Markdown com nome, preço, specs e justificativa |
 
-A principal ferramenta usada no fluxo é `buscar_produtos`, chamada pelo nó `recommend`.
+`buscar_produtos` é chamada pelos ramos `catalog_worker`; `comparar_produtos` é chamada por `compare_catalog_products`; `gerar_relatorio` é chamada por `report`.
+
+### Integração externa de leitura
+
+Catálogo externo opcional é configurado por `CATALOG_API_URL` e consultado via `GET`, com timeout de 5s e até 2 retries para timeout, conexão e HTTP 5xx. Respostas aceitas são lista JSON ou objeto com `produtos` lista. Cada produto passa validação de schema antes de entrar em qualquer prompt.
+
+Sem URL/credencial/serviço real, evidência externa permanece **BLOCKED**; fluxo usa catálogo `produtos.json`. Se integração configurada falhar, usa fallback local e marca `origem: local_fallback`. Integração é somente leitura, sem ações destrutivas.
+
+Variáveis opcionais: `CATALOG_API_URL`, `CATALOG_TIMEOUT`.
 
 ## 5. Memória e Contexto
 
-- O histórico de conversa é mantido na **sessão Django** (`request.session`)
-- A cada mensagem, o histórico (últimas 20 mensagens) é injetado no estado `AgentState.messages`
-- As necessidades extraídas (`user_needs`) persistem entre mensagens via sessão
-- O LangGraph usa `Annotated[list, add_messages]` para acumular mensagens automaticamente
+- Histórico e necessidades estruturadas ficam na sessão Django por até 24 horas; recarregar página preserva conversa.
+- Histórico retém no máximo 50 entradas; cada chamada LLM recebe apenas últimas 20 mensagens.
+- Mensagem excedendo 4.000 caracteres é rejeitada.
+- Nova conversa usa `POST /new/` e limpa sessão explicitamente.
+- `thread_id`, `run_id` e `recovered_context` ficam separados no estado do agente; não há checkpointer externo.
+- Sessão expirada inicia contexto vazio. Não são armazenados segredos ou dados pessoais sensíveis.
+- Falha de persistência é registrada e retorna erro, sem confirmar memória como salva.
+- O LangGraph usa `Annotated` e reducers para acumular mensagens, resultados e erros.
 
 ## 6. Segurança
 
 - Chaves de API ficam apenas em `.env` (excluído do Git via `.gitignore`)
-- `.env.example` contém apenas nomes das variáveis, sem valores reais
+- `.env.example` contém somente valores locais/documentais; chaves reais não são versionadas
 - Nenhuma credencial versionada no repositório
 - Proteção CSRF em todos os formulários Django
 - Não são coletados dados pessoais sensíveis
+- Produção exige `DEBUG=False`, `SECRET_KEY` não padrão e `LLM_API_KEY`; cookies, SSL redirect, HSTS e nosniff ficam protegidos.
+- Endpoints de mensagem aceitam JSON objeto com `message` não vazio até 4.000 caracteres; limite local: 10 requisições por sessão a cada 60 segundos, rejeitadas antes da IA.
+- Agente usa somente ferramentas de leitura (`buscar_produtos`, `comparar_produtos`, `gerar_relatorio`); não executa ações destrutivas nem escolhe ferramentas dinamicamente.
 
-## 7. Como Executar
+### Matriz de ameaças — Spec 004
+
+| Ameaça | Controle | Teste/evidência | Status |
+|---|---|---|---|
+| Prompt injection/vazamento | Dados não confiáveis delimitados; recusa local sem prompt, segredo ou raciocínio | `chat/tests/test_views.py`, `test_prompts.py`, `test_agent_nodes.py` | DONE |
+| Payload grande/malformado | JSON objeto, tipos, conteúdo e limites de request/mensagem | `chat/tests/test_views.py` | DONE |
+| Abuso/rate limit | 10 mensagens/minuto por sessão antes de LLM/grafo; resposta 429 | `chat/tests/test_limits.py` | DONE |
+| Segredos/configuração | Ambiente; produção falha com segredo/chave ausente ou padrão | `ajuda_tech/settings.py`, `python3 manage.py check --deploy` | DONE |
+| Tool indevida/catálogo hostil | Whitelist read-only, schema, tipos, limites e escaping | `chat/tests/test_agent_tools.py`, `test_catalog_integration.py` | DONE |
+| CSRF | `CsrfViewMiddleware`, token de template e AJAX | `chat/tests/test_views.py` | DONE |
+
+Autonomia fica limitada pelo grafo fixo: entrada do usuário não escolhe ferramentas, URLs ou ações; recomendação depende do fluxo e catálogo configurados.
+
+## 7. Matriz de rastreabilidade
+
+| Critério | Implementação | Teste/evidência | Status |
+|---|---|---|---|
+| Agente conversacional | `chat/agent/graph.py` | `chat/tests/test_agent_graph.py` | DONE |
+| Estado tipado | `chat/agent/state.py` | `chat/tests/test_agent_graph.py` | DONE |
+| Roteamento condicional | `chat/agent/graph.py` | `test_agent_graph.py` | DONE |
+| Fan-out/fan-in | `chat/agent/graph.py` | `test_agent_graph.py` | DONE |
+| Catálogo local | `produtos.json`, `tools.py` | `test_agent_tools.py` | DONE |
+| Catálogo externo opcional | `chat/agent/tools.py` | `test_catalog_integration.py` | DONE |
+| Memória de sessão | `chat/views.py` | `test_acceptance.py`, `test_limits.py` | DONE |
+| Limites de entrada | `chat/views.py` | `test_views.py`, `test_limits.py` | DONE |
+| Proteção contra injection | `chat/views.py`, `prompts.py` | `test_views.py`, `test_prompts.py` | DONE |
+| CSRF | Django middleware/endpoints | `test_views.py` | DONE |
+| Resiliência do LLM | `chat/services.py` | `test_services.py` | DONE |
+| Observabilidade | `chat/observability.py` | `test_observability.py` | DONE |
+| Contrato frontend | `chatApi.js`, `chatApp.js` | `chatApi*.test.js`, `chatApp.test.js` | DONE |
+| Cobertura automatizada | `.github/workflows/ci.yml` | `evidence/006-qa-com-ia/risk-matrix.md` | DONE |
+| Serviço externo real e vídeo | fora do repositório | `evidence/006-qa-com-ia/risk-matrix.md` | BLOCKED |
+
+## 8. Como Executar
 
 ### Pré-requisitos
 - Python 3.12+
@@ -151,7 +208,7 @@ pytest              # backend
 npm test            # frontend
 ```
 
-## 8. Exemplo de Entrada e Saída
+## 9. Exemplo de Entrada e Saída
 
 Veja [docs/exemplos_execucao.md](docs/exemplos_execucao.md) para exemplos detalhados de conversas com o agente.
 
@@ -175,15 +232,15 @@ muito bem o que você precisa.
 
 ![alt text](image.png)
 
-## 9. Decisões Tomadas
+## 10. Decisões Tomadas
 
-- **LangGraph sobre abordagem procedural:** escolhemos o framework porque permite visualizar o fluxo do agente como um grafo, facilitando manutenção e testes
+- **LangGraph sobre abordagem procedural:** permite visualizar o fluxo do agente como um grafo
 - **OpenRouter como provedor:** permite testar diferentes modelos LLM sem trocar o código
 - **Catálogo JSON local:** produto simples, sem necessidade de banco de dados para o catálogo
-- **Sessão Django para memória:** evita persistência desnecessária, mantendo dados apenas durante a sessão do usuário
-- **Roteamento condicional:** classifica a intenção do usuário antes de decidir o próximo nó, reduzindo chamadas LLM desnecessárias
+- **Sessão Django para memória:** mantém dados apenas durante a sessão do usuário
+- **Fan-out/fan-in do catálogo:** consulta categorias em ramos independentes e preserva resultados parciais
 
-## 10. Limitações
+## 11. Limitações
 
 - **Limite de requests:** a conta free tier do OpenRouter permite ~50 requests/dia
 - **Qualidade do modelo:** modelos gratuitos podem expor raciocínio interno (chain-of-thought), que é filtrado pelo código
@@ -191,7 +248,7 @@ muito bem o que você precisa.
 - **Sem persistência entre sessões:** ao fechar o navegador, o histórico é perdido
 - **Safety filters:** alguns modelos retornam respostas bloqueadas por filtros de segurança; o código trata esses casos
 
-## Estrutura do Projeto
+## 12. Estrutura do Projeto
 
 ```shell
 ajuda.tech/
@@ -200,15 +257,15 @@ ajuda.tech/
 │   ├── agent/
 │   │   ├── graph.py     # Grafo LangGraph (StateGraph + nós + edges)
 │   │   ├── nodes.py     # Funções de cada nó do grafo
-│   │   ├── state.py     # AgentState (TypedDict)
-│   │   └── tools.py     # Ferramentas: buscar_produtos, comparar_produtos, gerar_relatorio
+│   │   ├── state.py     # Estado tipado (TypedDict)
+│   │   └── tools.py     # Ferramentas do catálogo e relatório
 │   ├── static/chat/     # Frontend (JS modular + CSS)
 │   ├── templates/chat/  # Template Django
 │   ├── tests/           # Testes backend (pytest)
 │   ├── prompts.py       # System Prompts do agente
 │   ├── services.py      # Cliente OpenRouter
 │   ├── views.py         # Endpoints Django
-│   └── urls.py          # Rotas
+│   └── urls.py           # Rotas
 ├── core/                # Landing page
 ├── docs/                # Documentação do projeto
 ├── produtos.json        # Catálogo de produtos (12 itens)

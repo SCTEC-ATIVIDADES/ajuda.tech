@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "node --check chat/static/chat/js/chatApi.js && node --check chat/static/chat/js/chatApp.js && node --check chat/static/chat/js/chatState.js && node --check chat/static/chat/js/chatTheme.js && node --check chat/static/chat/js/chatUi.js"
   },
   "devDependencies": {
     "jsdom": "^26.1.0",

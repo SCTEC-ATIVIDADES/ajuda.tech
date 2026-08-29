@@ -9,6 +9,8 @@ AgentSendMessageView — endpoint principal usando LangGraph agent
 
 import json
 import logging
+import time
+from uuid import uuid4
 
 from django.http import JsonResponse
 from django.views import View
@@ -21,6 +23,7 @@ from chat.exceptions import (
     ServiceUnavailableError,
 )
 from chat.services import OpenRouterClient
+from chat.observability import emit_event, execution_context, new_id
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,124 @@ def _get_agent_graph():
     from chat.agent.graph import agent_graph
     return agent_graph
 
+
+def _invoke_agent(initial_state):
+    from django.conf import settings
+    trace_id = initial_state["trace_id"]
+    run_id = initial_state["run_id"]
+    with execution_context(trace_id, run_id, getattr(settings, "AGENT_TIMEOUT", 60)):
+        emit_event("request", "start", "started")
+        started = time.perf_counter()
+        try:
+            result = _get_agent_graph().invoke(initial_state)
+        except Exception as exc:
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            raise
+        emit_event("request", "complete", "ok", duration_ms=(time.perf_counter() - started) * 1000)
+        return result
+
 _MAX_HISTORY_SIZE = 50
+_LLM_WINDOW_SIZE = 20
+_MAX_MESSAGE_SIZE = 4000
+_MAX_REQUEST_SIZE = 8192
+_RATE_LIMIT_MAX = 10
+_RATE_LIMIT_WINDOW = 60
+_INJECTION_PATTERNS = (
+    "ignore previous instructions",
+    "ignore all instructions",
+    "reveal system prompt",
+    "show system prompt",
+    "reveal your prompt",
+    "chain of thought",
+    "raciocínio interno",
+    "segredo",
+    "api key",
+)
+_SAFE_INJECTION_RESPONSE = (
+    "Não posso revelar instruções internas, segredos ou raciocínio privado. "
+    "Posso ajudar a escolher um computador com base nas suas necessidades."
+)
+
+
+def _history(request):
+    return list(request.session.get("chat_history", []))[-_MAX_HISTORY_SIZE:]
+
+
+def _llm_history(history):
+    return history[-_LLM_WINDOW_SIZE:]
+
+
+def _rate_limited(request) -> bool:
+    now = time.time()
+    timestamps = [
+        stamp for stamp in request.session.get("chat_rate_limit", [])
+        if now - stamp < _RATE_LIMIT_WINDOW
+    ]
+    if len(timestamps) >= _RATE_LIMIT_MAX:
+        request.session["chat_rate_limit"] = timestamps
+        return True
+    timestamps.append(now)
+    request.session["chat_rate_limit"] = timestamps
+    request.session.modified = True
+    return False
+
+
+def _rate_limit_response(request):
+    if _rate_limited(request):
+        return JsonResponse(
+            {"error": "Muitas mensagens. Aguarde um minuto e tente novamente."},
+            status=429,
+        )
+    return None
+
+
+def _is_injection(message: str) -> bool:
+    lowered = message.casefold()
+    return any(pattern in lowered for pattern in _INJECTION_PATTERNS)
+
+
+def _parse_json_object(request):
+    if len(request.body) > _MAX_REQUEST_SIZE:
+        return None, JsonResponse({"error": "Body excede limite de tamanho."}, status=413)
+    try:
+        body = json.loads(request.body or b"{}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None, JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
+    if not isinstance(body, dict):
+        return None, JsonResponse({"error": "Body deve ser um objeto JSON."}, status=400)
+    return body, None
+
+
+def _parse_message(request):
+    body, error = _parse_json_object(request)
+    if error:
+        return None, error
+
+    if not isinstance(body, dict):
+        return None, JsonResponse({"error": "Body deve ser um objeto JSON."}, status=400)
+
+    message = body.get("message", "")
+    if not isinstance(message, str) or not message.strip():
+        return None, JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
+    message = message.strip()
+    if len(message) > _MAX_MESSAGE_SIZE:
+        return None, JsonResponse(
+            {"error": f"Mensagem excede limite de {_MAX_MESSAGE_SIZE} caracteres."}, status=413
+        )
+    return message, None
+
+
+def _persist(request, history, needs, *, run_id=None):
+    try:
+        request.session["chat_history"] = history[-_MAX_HISTORY_SIZE:]
+        request.session["user_needs"] = needs
+        request.session["thread_id"] = request.session.get("thread_id", str(uuid4()))
+        request.session["run_id"] = run_id or str(uuid4())
+        request.session.modified = True
+    except Exception:
+        logger.error("Falha ao persistir memória da sessão", exc_info=True)
+        return False
+    return True
 
 
 class ChatView(TemplateView):
@@ -39,8 +159,15 @@ class ChatView(TemplateView):
     template_name = "chat/chat.html"
 
     def get(self, request, *args, **kwargs):
-        request.session.flush()
         return super().get(request, *args, **kwargs)
+
+
+class NewConversationView(View):
+    http_method_names = ["post"]
+
+    def post(self, request):
+        request.session.flush()
+        return JsonResponse({"ok": True})
 
 
 class SendMessageView(View):
@@ -57,28 +184,19 @@ class SendMessageView(View):
     def _get_client(self) -> OpenRouterClient:
         return OpenRouterClient()
 
-    def _parse_message_body(self, request) -> tuple[str | None, JsonResponse | None]:
-        try:
-            body = json.loads(request.body)
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            return None, JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
-
-        message = body.get("message", "").strip()
-        if not message:
-            return None, JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
-
-        return message, None
-
     def post(self, request):
-        message, error = self._parse_message_body(request)
+        message, error = _parse_message(request)
         if error:
             return error
-
-        history = request.session.get("chat_history", [])
+        if response := _rate_limit_response(request):
+            return response
+        if _is_injection(message):
+            return JsonResponse({"reply": _SAFE_INJECTION_RESPONSE})
+        history = _history(request)
         history.append({"role": "user", "content": message})
 
         try:
-            reply = self._get_client().chat_completion(history)
+            reply = self._get_client().chat_completion(_llm_history(history))
         except AuthenticationError as exc:
             logger.error("Falha de autenticação com OpenRouter: %s", exc)
             return JsonResponse(
@@ -89,7 +207,6 @@ class SendMessageView(View):
             return JsonResponse(
                 {
                     "error": "Serviço de IA temporariamente indisponível. Tente novamente.",
-                    "failed_message": message,
                 },
                 status=503,
             )
@@ -98,19 +215,19 @@ class SendMessageView(View):
             return JsonResponse(
                 {
                     "error": "Muitas requisições. Aguarde alguns segundos e tente novamente.",
-                    "failed_message": message,
                 },
                 status=429,
             )
         except InvalidResponseError as exc:
             logger.warning("Erro ao processar resposta: %s", exc)
             return JsonResponse(
-                {"error": "Não foi possível processar a resposta.", "failed_message": message},
+                {"error": "Não foi possível processar a resposta."},
                 status=503,
             )
 
         history.append({"role": "assistant", "content": reply})
-        request.session["chat_history"] = history[-_MAX_HISTORY_SIZE:]
+        if not _persist(request, history, request.session.get("user_needs", {})):
+            return JsonResponse({"error": "Não foi possível salvar a conversa."}, status=500)
 
         return JsonResponse({"reply": reply})
 
@@ -128,10 +245,17 @@ class RecommendView(View):
         return OpenRouterClient()
 
     def post(self, request):
-        history = request.session.get("chat_history", [])
+        body, error = _parse_json_object(request)
+        if error:
+            return error
+        if response := _rate_limit_response(request):
+            return response
+        history = _history(request)
+        if not history:
+            return JsonResponse({"error": "Envie uma mensagem antes de pedir recomendações."}, status=400)
 
         try:
-            products = self._get_client().get_product_recommendations(history)
+            products = self._get_client().get_product_recommendations(_llm_history(history))
         except ServiceUnavailableError as exc:
             logger.warning("OpenRouter indisponível ao gerar recomendações: %s", exc)
             return JsonResponse(
@@ -155,31 +279,27 @@ class AgentSendMessageView(View):
 
     http_method_names = ["post"]
 
-    def _parse_message_body(self, request) -> tuple[str | None, JsonResponse | None]:
-        try:
-            body = json.loads(request.body)
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            return None, JsonResponse({"error": "Body deve ser JSON válido."}, status=400)
-
-        message = body.get("message", "").strip()
-        if not message:
-            return None, JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
-
-        return message, None
-
     def post(self, request):
-        message, error = self._parse_message_body(request)
+        message, error = _parse_message(request)
         if error:
             return error
+        if response := _rate_limit_response(request):
+            return response
+        if _is_injection(message):
+            return JsonResponse({"reply": _SAFE_INJECTION_RESPONSE})
 
-        history = request.session.get("chat_history", [])
+        history = _history(request)
         history.append({"role": "user", "content": message})
 
         try:
-            messages = history[-_MAX_HISTORY_SIZE:]
+            messages = _llm_history(history)
 
             initial_state = {
                 "messages": messages,
+                "thread_id": request.session.get("thread_id", ""),
+                "trace_id": new_id(),
+                "run_id": new_id(),
+                "recovered_context": {"user_needs": request.session.get("user_needs", {})},
                 "user_needs": request.session.get("user_needs", {}),
                 "products_found": [],
                 "stage": "",
@@ -188,7 +308,7 @@ class AgentSendMessageView(View):
                 "classified_intent": "",
             }
 
-            result = _get_agent_graph().invoke(initial_state)
+            result = _invoke_agent(initial_state)
 
             reply = ""
             for msg in reversed(result.get("messages", [])):
@@ -204,8 +324,8 @@ class AgentSendMessageView(View):
                 reply = result.get("recommendation", "Desculpe, não consegui processar sua mensagem.")
 
             history.append({"role": "assistant", "content": reply})
-            request.session["chat_history"] = history[-_MAX_HISTORY_SIZE:]
-            request.session["user_needs"] = result.get("user_needs", {})
+            if not _persist(request, history, result.get("user_needs", {}), run_id=initial_state["run_id"]):
+                return JsonResponse({"error": "Não foi possível salvar a conversa."}, status=500)
 
             response_data = {"reply": reply}
             if result.get("report"):
@@ -223,7 +343,6 @@ class AgentSendMessageView(View):
             return JsonResponse(
                 {
                     "error": "Serviço de IA temporariamente indisponível. Tente novamente.",
-                    "failed_message": message,
                 },
                 status=503,
             )
@@ -232,19 +351,18 @@ class AgentSendMessageView(View):
             return JsonResponse(
                 {
                     "error": "Muitas requisições. Aguarde alguns segundos e tente novamente.",
-                    "failed_message": message,
                 },
                 status=429,
             )
         except InvalidResponseError as exc:
             logger.warning("Erro ao processar resposta: %s", exc)
             return JsonResponse(
-                {"error": "Não foi possível processar a resposta.", "failed_message": message},
+                {"error": "Não foi possível processar a resposta."},
                 status=503,
             )
         except Exception as exc:
             logger.error("Erro inesperado no agente LangGraph: %s", exc, exc_info=True)
             return JsonResponse(
-                {"error": "Erro interno do agente. Tente novamente.", "failed_message": message},
+                {"error": "Erro interno do agente. Tente novamente."},
                 status=500,
             )

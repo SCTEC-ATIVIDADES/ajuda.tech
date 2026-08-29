@@ -1,0 +1,4 @@
+[
+  {"timestamp":"2026-01-01T00:00:00+00:00","trace_id":"trace-failure","run_id":"run-failure","stage":"request","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-01-01T00:00:01+00:00","trace_id":"trace-failure","run_id":"run-failure","stage":"catalog","event":"complete","status":"error","duration_ms":1000,"error_type":"TimeoutError"}
+]

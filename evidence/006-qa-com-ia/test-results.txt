@@ -1,0 +1,34 @@
+# Evidência de execução — Spec 006
+
+- Data: 2026-08-29
+- Ambiente host: Python 3.12.3; execução principal Docker: Python 3.12.14, Django 5.2.17, pytest 9.1.1, Node.js/npm fornecidos pela imagem.
+- Dependências de LangGraph instaladas localmente conforme `requirements.txt`.
+- Nenhum teste executa API externa; chamadas LLM/catálogo são mockadas.
+
+## Resultados
+
+```text
+docker build -t ajuda-tech-qa .
+PASS
+
+docker run --rm -v "$PWD:/app" -w /app -e SECRET_KEY=... -e LLM_API_KEY=... -e DEBUG=True -e ALLOWED_HOSTS=localhost,127.0.0.1 ajuda-tech-qa sh -c 'python manage.py migrate --no-input && pytest --cov=chat --cov-report=term-missing --cov-report=xml --cov-fail-under=80 -q'
+146 passed in 13.82s
+TOTAL 93.11%
+
+python3 -m pytest chat/tests/test_acceptance.py chat/tests/test_agent_graph.py chat/tests/test_agent_nodes.py chat/tests/test_agent_tools.py chat/tests/test_catalog_integration.py -q
+29 passed
+
+python3 -m compileall -q chat
+PASS
+
+git diff --check
+PASS
+```
+
+## Bloqueios
+
+docker run --rm -v "$PWD:/app" -w /app ajuda-tech-qa sh -c 'npm test'
+99 passed in 1.57s (9 files)
+
+- `ruff` e `mypy`: BLOCKED; executáveis não estão instalados.
+- Integração com serviço externo real: BLOCKED por ausência de serviço/credencial e por política de não chamar APIs nos testes.

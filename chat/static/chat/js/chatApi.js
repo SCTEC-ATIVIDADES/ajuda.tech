@@ -1,4 +1,5 @@
 export const CHAT_ENDPOINT = '/agent/send/';
+export const NEW_CONVERSATION_ENDPOINT = '/new/';
 
 const MOCK_RESPONSE =
   'Obrigado! Em breve conectaremos ao assistente. Por enquanto, continue me contando o que você precisa.';
@@ -55,7 +56,18 @@ export async function postChat(message, sessionId, { fetchFn = fetch } = {}) {
   return response.json();
 }
 
+export async function newConversation({ fetchFn = fetch } = {}) {
+  const csrfToken = getCsrfToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+  const response = await fetchFn(NEW_CONVERSATION_ENDPOINT, {
+    method: 'POST', headers, credentials: 'include', body: '{}',
+  });
+  if (!response.ok) throw new Error('Não foi possível iniciar nova conversa.');
+  return response.json();
+}
+
 export async function postChatMock(_message) {
   await delay(100);
-  return { message: MOCK_RESPONSE };
+  return { reply: MOCK_RESPONSE };
 }

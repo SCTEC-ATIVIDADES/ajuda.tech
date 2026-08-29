@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from unittest.mock import patch, mock_open
 
+import pytest
+
 from chat.agent.tools import (
     buscar_produtos,
     comparar_produtos,
@@ -33,6 +35,24 @@ PRODUTOS_FIXTURE = [
 ]
 
 
+def test_buscar_produtos_catalogo_vazio():
+    with patch("chat.agent.tools._carregar_produtos", return_value=[]):
+        result = json.loads(buscar_produtos.invoke({"categoria": "notebook", "orcamento_max": 5000.0}))
+    assert result["produtos"] == []
+    assert result["origem"] == "local"
+
+
+def test_buscar_produtos_orcamento_invalido():
+    result = json.loads(buscar_produtos.invoke({"categoria": "notebook", "orcamento_max": float("nan")}))
+    assert result["codigo"] == "invalid_argument"
+
+
+def test_buscar_produtos_catalogo_malformado():
+    with patch("chat.agent.tools._carregar_produtos", return_value=[{}]):
+        with pytest.raises(ValueError):
+            buscar_produtos.invoke({"categoria": "notebook", "orcamento_max": 5000.0})
+
+
 def test_buscar_produtos_categoria_valida():
     with patch("chat.agent.tools._carregar_produtos", return_value=PRODUTOS_FIXTURE):
         result = json.loads(buscar_produtos.invoke({"categoria": "notebook", "orcamento_max": 5000.0}))
@@ -58,6 +78,12 @@ def test_buscar_produtos_orcamento_string_direto():
         raw = fn.func(categoria="notebook", orcamento_max="R$ 5.000,00")
     result = json.loads(raw)
     assert len(result["produtos"]) == 1
+
+
+def test_comparar_produtos_usa_fallback_local():
+    with patch("chat.agent.tools.fetch_external_catalog", side_effect=RuntimeError("timeout")), patch("chat.agent.tools._carregar_produtos", return_value=PRODUTOS_FIXTURE):
+        result = json.loads(comparar_produtos.invoke({"produto_a_id": 1, "produto_b_id": 2}))
+    assert result["diferenca_preco"] == 3500.0
 
 
 def test_comparar_produtos_encontrados():

@@ -33,6 +33,14 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
+      - name: Validar configuração Django
+        env:
+          SECRET_KEY: django-insecure-ci-key-nao-usar-em-producao
+          LLM_API_KEY: sk-test-dummy-key-para-ci
+          DEBUG: "True"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
+        run: python manage.py check
+
       - name: Aplicar migrações
         env:
           SECRET_KEY: django-insecure-ci-key-nao-usar-em-producao
@@ -40,6 +48,9 @@ jobs:
           DEBUG: "True"
           ALLOWED_HOSTS: "localhost,127.0.0.1"
         run: python manage.py migrate --no-input
+
+      - name: Analisar logs sem rede externa
+        run: python analyze_observability.py chat/tests/observability_fixture.json > observability-analysis.json
 
       - name: Executar testes com cobertura
         env:
@@ -54,22 +65,42 @@ jobs:
             --cov-report=term-missing \
             --cov-fail-under=80
 
-  # frontend-test:
-  #   name: Testes frontend (Node.js)
-  #   runs-on: ubuntu-latest
-  #
-  #   steps:
-  #     - name: Checkout do repositório
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Configurar Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: "22"
-  #         cache: npm
-  #
-  #     - name: Instalar dependências
-  #       run: npm ci
-  #
-  #     - name: Executar testes Vitest
-  #       run: npm test
+      - name: Publicar artefatos de análise
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-evidence-${{ matrix.python-version }}
+          path: |
+            observability-analysis.json
+            coverage.xml
+
+  frontend-test:
+    name: Testes frontend (Node.js)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar lint frontend
+        run: npm run lint
+
+      - name: Executar testes Vitest
+        run: npm test
+
+  docker-validation:
+    name: Validar imagem Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+      - name: Construir imagem
+        run: docker build --tag ajuda-tech-ci .

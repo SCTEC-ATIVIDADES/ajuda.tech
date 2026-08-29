@@ -1,44 +1,54 @@
-"""
-Estado compartilhado do agente LangGraph.
+"""Contratos tipados do estado compartilhado pelo agente LangGraph."""
 
-Define o TypedDict que representa o estado que flui entre os nós do grafo.
-"""
-
-from typing import TypedDict
+from operator import add
+from typing import Annotated, TypedDict
 
 from langgraph.graph import add_messages
-from typing import Annotated
 
 
-class AgentState(TypedDict):
-    """
-    Estado compartilhado entre todos os nós do grafo LangGraph.
+class Product(TypedDict, total=False):
+    id: int
+    nome: str
+    tipo: str
+    preco: float
+    especificacoes: dict[str, str]
+    indicado_para: list[str]
+    mobilidade: str
 
-    Attributes
-    ----------
-    messages : list
-        Histórico de mensagens da conversa (user + assistant).
-    user_needs : dict
-        Necessidades extraídas do usuário:
-        - proposito: str (ex: "estudos", "games", "escritorio")
-        - orcamento: float (valor máximo em reais)
-        - mobilidade: str ("alta", "media", "baixa")
-        - prioridades: list[str] (ex: ["desempenho", "preco", "portabilidade"])
-    products_found : list
-        Produtos encontrados pela tool buscar_produtos.
-    stage : str
-        Etapa atual do fluxo: classify | greet | gather | extract | recommend | report | respond
-    recommendation : str
-        Texto da recomendação gerada pelo agente.
-    report : str
-        Relatório estruturado em Markdown da recomendação.
-    classified_intent : str
-        Intenção classificada: saudacao | pergunta | dados | recomendacao
-    """
+
+class CatalogJob(TypedDict, total=False):
+    branch: str
+    categoria: str
+    orcamento_max: float
+    trace_id: str
+    run_id: str
+    deadline: float
+
+
+class CatalogBranchResult(TypedDict, total=False):
+    branch: str
+    categoria: str
+    status: str
+    products: list[Product]
+    error: str
+    duration_ms: float
+
+
+class AgentState(TypedDict, total=False):
     messages: Annotated[list, add_messages]
-    user_needs: dict
-    products_found: list
+    thread_id: str
+    run_id: str
+    trace_id: str
+    deadline: float
+    recovered_context: dict[str, object]
+    user_needs: dict[str, object]
+    products_found: list[Product]
+    catalog_jobs: list[CatalogJob]
+    branch_job: CatalogJob
+    catalog_results: Annotated[list[CatalogBranchResult], add]
+    errors: Annotated[list[str], add]
     stage: str
     recommendation: str
     report: str
+    comparison: str
     classified_intent: str

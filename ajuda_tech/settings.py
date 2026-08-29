@@ -85,6 +85,7 @@ LLM_PROVIDER = config("LLM_PROVIDER", default="openai")
 LLM_MODEL = config("LLM_MODEL", default="deepseek/deepseek-v4-flash:free")
 LLM_TIMEOUT = config("LLM_TIMEOUT", default=30, cast=int)
 AGENT_TIMEOUT = config("AGENT_TIMEOUT", default=60, cast=int)
+AUTOMATION_WEBHOOK_SECRET = config("AUTOMATION_WEBHOOK_SECRET", default="")
 CATALOG_API_URL = config("CATALOG_API_URL", default="")
 CATALOG_TIMEOUT = config("CATALOG_TIMEOUT", default=5, cast=int)
 

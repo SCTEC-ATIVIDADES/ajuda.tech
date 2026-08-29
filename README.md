@@ -208,6 +208,18 @@ pytest              # backend
 npm test            # frontend
 ```
 
+### Automação local com n8n
+
+```bash
+cp .env.example .env
+openssl rand -hex 32
+# defina AUTOMATION_WEBHOOK_SECRET e N8N_ENCRYPTION_KEY com valores gerados
+
+docker compose up --build -d
+```
+
+Abra `http://localhost:5678`, importe `n8n/workflows/ajuda-tech-webhook.json`, defina workflow como ativo e use URL de produção `/webhook/ajuda-tech`. n8n valida `event_id`/`message`, assina payload HMAC-SHA256 e chama `http://app:8000/automation/webhook/`; app rejeita assinatura inválida e duplicatas. Saída visível: resposta JSON da execução n8n. Workflow local não publica HTTPS.
+
 ## 9. Exemplo de Entrada e Saída
 
 Veja [docs/exemplos_execucao.md](docs/exemplos_execucao.md) para exemplos detalhados de conversas com o agente.

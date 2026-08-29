@@ -1,0 +1,9 @@
+{
+  "trigger": "POST http://localhost:5678/webhook/ajuda-tech",
+  "normal": {"status": 200, "result": "workflow completed; app response JSON"},
+  "duplicate": {"status": 200, "result": "{\"ok\":true,\"duplicate\":true}"},
+  "invalid_payload": {"status": 500, "result": "{\"message\":\"Error in workflow\"}"},
+  "invalid_signature_app": {"status": 401, "result": "{\"error\":\"Assinatura inválida.\"}"},
+  "integration_failure": {"result": "HTTP node configured with 70000ms timeout and propagates non-2xx as workflow failure; not forced against live LLM to avoid external side effects"},
+  "observed_at": "2026-08-29"
+}

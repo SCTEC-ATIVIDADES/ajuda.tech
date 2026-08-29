@@ -7,10 +7,17 @@ RecommendView      — extrai lista de produtos a partir do histórico da conver
 AgentSendMessageView — endpoint principal usando LangGraph agent
 """
 
+import hashlib
+import hmac
 import json
 import logging
 import time
 from uuid import uuid4
+
+from django.conf import settings
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from django.http import JsonResponse
 from django.views import View
@@ -26,6 +33,8 @@ from chat.services import OpenRouterClient
 from chat.observability import emit_event, execution_context, new_id
 
 logger = logging.getLogger(__name__)
+
+_WEBHOOK_IDEMPOTENCY_TTL = 86400
 
 
 def _get_agent_graph():
@@ -266,6 +275,33 @@ class RecommendView(View):
             return JsonResponse({"error": "Não foi possível gerar recomendações."}, status=503)
 
         return JsonResponse({"products": products})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AutomationWebhookView(View):
+    http_method_names = ["post"]
+
+    def post(self, request):
+        secret = getattr(settings, "AUTOMATION_WEBHOOK_SECRET", "")
+        provided = request.headers.get("X-Automation-Signature", "")
+        expected = hmac.new(secret.encode(), request.body, hashlib.sha256).hexdigest()
+        if not secret or not hmac.compare_digest(provided, expected):
+            return JsonResponse({"error": "Assinatura inválida."}, status=401)
+
+        body, error = _parse_json_object(request)
+        if error:
+            return error
+        event_id = body.get("event_id")
+        message = body.get("message")
+        if not isinstance(event_id, str) or not event_id.strip() or not isinstance(message, str) or not message.strip():
+            return JsonResponse({"error": "Campos 'event_id' e 'message' são obrigatórios."}, status=400)
+        key = f"automation-webhook:{event_id.strip()}"
+        if not cache.add(key, True, _WEBHOOK_IDEMPOTENCY_TTL):
+            return JsonResponse({"ok": True, "duplicate": True})
+        response = AgentSendMessageView().post(request)
+        if response.status_code >= 500:
+            cache.delete(key)
+        return response
 
 
 class AgentSendMessageView(View):

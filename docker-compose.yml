@@ -7,9 +7,32 @@ services:
       - "8001:8000"
     env_file:
       - .env
+    environment:
+      ALLOWED_HOSTS: localhost,127.0.0.1,app
+      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-change-me}
     volumes:
       - .:/app
     working_dir: /app
     command: >
-       sh -c "python manage.py migrate &&
-              python manage.py runserver 0.0.0.0:8000"
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  n8n:
+    image: n8nio/n8n:1.109.2
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me}
+      N8N_SECURE_COOKIE: "false"
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-change-me}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - app
+
+volumes:
+  n8n_data:

@@ -12,7 +12,7 @@ from pathlib import Path
 from django.conf import settings
 from langchain_core.tools import tool
 
-from chat.observability import emit_event, stage
+from chat.observability import ExecutionTimeout, emit_event, stage
 from chat.services import fetch_external_catalog
 
 
@@ -70,10 +70,14 @@ def _obter_catalogo() -> tuple[list[dict], str]:
         return _validar_catalogo(_carregar_produtos()), "local"
     try:
         return _validar_catalogo(fetch_external_catalog()), "externo"
+    except ExecutionTimeout:
+        raise
     except Exception as exc:
         emit_event("catalog", "fallback", "fallback", error=exc)
         try:
             return _validar_catalogo(_carregar_produtos()), "local_fallback"
+        except ExecutionTimeout:
+            raise
         except Exception as exc:
             raise ValueError("Catálogo indisponível.") from exc
 

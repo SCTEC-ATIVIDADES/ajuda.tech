@@ -1,0 +1,8 @@
+[
+  {"timestamp":"2026-08-30T02:26:29.691Z","trace_id":"trace-failure","run_id":"run-failure","stage":"request","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:26:29.692Z","trace_id":"trace-failure","run_id":"run-failure","stage":"llm","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:26:29.700Z","trace_id":"trace-failure","run_id":"run-failure","stage":"llm","event":"timeout","status":"error","duration_ms":5000,"error_type":"TimeoutError"},
+  {"timestamp":"2026-08-30T02:26:29.701Z","trace_id":"trace-failure","run_id":"run-failure","stage":"llm","event":"retry","status":"retryable","duration_ms":0,"error_type":"ServiceUnavailableError"},
+  {"timestamp":"2026-08-30T02:26:34.702Z","trace_id":"trace-failure","run_id":"run-failure","stage":"llm","event":"complete","status":"error","duration_ms":5000,"error_type":"ServiceUnavailableError"},
+  {"timestamp":"2026-08-30T02:26:34.703Z","trace_id":"trace-failure","run_id":"run-failure","stage":"request","event":"complete","status":"error","duration_ms":5011,"error_type":"ServiceUnavailableError"}
+]

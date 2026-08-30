@@ -1,0 +1,308 @@
+[
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog",
+    "event": "fallback",
+    "status": "fallback",
+    "count": 3,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog",
+    "event": "retry",
+    "status": "retryable",
+    "count": 6,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog.compare",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog.consolidate",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog.desktop",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 3012.11
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog.desktop",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog.notebook",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 3012.07
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog.notebook",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog_worker",
+    "event": "complete",
+    "status": "ok",
+    "count": 2,
+    "duration_ms": 6025.23
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "catalog_worker",
+    "event": "start",
+    "status": "started",
+    "count": 2,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "classify_msg",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.2
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "classify_msg",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "compare_catalog_products",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 3011.71
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "compare_catalog_products",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "consolidate_catalog",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.12
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "consolidate_catalog",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "gather_needs",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.16
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "gather_needs",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "prepare_catalog",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.06
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "prepare_catalog",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "recommend",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.24
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "recommend",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "report",
+    "event": "complete",
+    "status": "ok",
+    "count": 2,
+    "duration_ms": 0.88
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "report",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "request",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 6033.95
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "request",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "respond",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.08
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "respond",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "tool.buscar_produtos",
+    "event": "complete",
+    "status": "ok",
+    "count": 2,
+    "duration_ms": 6021.78
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "tool.buscar_produtos",
+    "event": "start",
+    "status": "started",
+    "count": 2,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "tool.comparar_produtos",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 3010.26
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "tool.comparar_produtos",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "tool.gerar_relatorio",
+    "event": "complete",
+    "status": "ok",
+    "count": 1,
+    "duration_ms": 0.09
+  },
+  {
+    "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+    "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+    "stage": "tool.gerar_relatorio",
+    "event": "start",
+    "status": "started",
+    "count": 1,
+    "duration_ms": 0.0
+  }
+]

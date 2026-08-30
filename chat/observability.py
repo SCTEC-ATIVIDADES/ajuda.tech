@@ -18,7 +18,7 @@ _REQUIRED_FIELDS = (
     "duration_ms", "error_type",
 )
 _context = contextvars.ContextVar("execution_context", default=None)
-_metrics: dict[tuple[str, str, str], int] = {}
+_metrics: dict[tuple[str, str, str, str, str], dict[str, float | int]] = {}
 _metrics_lock = Lock()
 
 
@@ -68,29 +68,45 @@ def emit_event(stage: str, event: str, status: str, *, duration_ms: float = 0, e
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "trace_id": context.get("trace_id", ""),
         "run_id": context.get("run_id", ""),
-        "stage": str(stage),
-        "event": str(event),
-        "status": str(status),
+        "stage": str(stage)[:100],
+        "event": str(event)[:50],
+        "status": str(status)[:50],
         "duration_ms": round(max(float(duration_ms), 0), 2),
         "error_type": _error_type(error),
     }
     with _metrics_lock:
-        key = (record["trace_id"], record["run_id"], record["event"])
-        _metrics[key] = _metrics.get(key, 0) + 1
+        key = (record["trace_id"], record["run_id"], record["stage"], record["event"], record["status"])
+        metric = _metrics.setdefault(key, {"count": 0, "duration_ms": 0.0})
+        metric["count"] += 1
+        metric["duration_ms"] += record["duration_ms"]
     logger.info(json.dumps(record, ensure_ascii=False, sort_keys=True))
     return record
 
 
 def analyze_events(events: list[dict]) -> dict:
-    ordered = sorted(events, key=lambda item: item.get("timestamp", ""))
-    failures = [item for item in ordered if item.get("status") == "error"]
+    missing = [field for event in events for field in _REQUIRED_FIELDS if field not in event]
+    if missing:
+        raise ValueError("evento sem campos obrigatórios")
+    if any(not event["trace_id"] or not event["run_id"] for event in events):
+        raise ValueError("evento sem IDs de correlação")
+    ordered = sorted(enumerate(events), key=lambda pair: (pair[1].get("timestamp", ""), pair[0]))
+    records = [item for _, item in ordered]
+    ids = {(item.get("trace_id"), item.get("run_id")) for item in records}
+    if len(ids) > 1:
+        raise ValueError("eventos de execuções diferentes não podem ser correlacionados")
+    failures = [item for item in records if item.get("status") == "error"]
     durations = {}
-    for item in ordered:
+    for item in records:
         if item.get("event") == "complete":
-            durations[item["stage"]] = item.get("duration_ms", 0)
+            stage = item["stage"]
+            durations[stage] = durations.get(stage, 0) + item.get("duration_ms", 0)
+    slowest = max(durations.items(), key=lambda item: item[1]) if durations else (None, 0)
     return {
-        "stages": [item["stage"] for item in ordered if item.get("event") == "start"],
+        "trace_id": records[0].get("trace_id") if records else None,
+        "run_id": records[0].get("run_id") if records else None,
+        "stages": [item["stage"] for item in records if item.get("event") == "start"],
         "durations_ms": durations,
+        "slowest_stage": slowest[0],
         "failures": [{"stage": item["stage"], "error_type": item.get("error_type")} for item in failures],
         "probable_cause": failures[0].get("error_type") if failures else None,
     }
@@ -99,8 +115,16 @@ def analyze_events(events: list[dict]) -> dict:
 def metrics_snapshot() -> list[dict]:
     with _metrics_lock:
         return [
-            {"trace_id": trace_id, "run_id": run_id, "event": event, "count": count}
-            for (trace_id, run_id, event), count in sorted(_metrics.items())
+            {
+                "trace_id": trace_id,
+                "run_id": run_id,
+                "stage": stage,
+                "event": event,
+                "status": status,
+                "count": metric["count"],
+                "duration_ms": round(float(metric["duration_ms"]), 2),
+            }
+            for (trace_id, run_id, stage, event, status), metric in sorted(_metrics.items())
         ]
 
 

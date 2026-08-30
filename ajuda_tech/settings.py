@@ -110,6 +110,10 @@ LOGGING = {
             "format": "{levelname} {asctime} {module} {message}",
             "style": "{",
         },
+        "structured": {
+            "format": "{message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "console": {
@@ -130,8 +134,16 @@ LOGGING = {
             "maxBytes": 5 * 1024 * 1024,  # 5 MB
             "backupCount": 5,
             "encoding": "utf-8",
-            "level": "WARNING",
             "formatter": "verbose",
+            "level": "WARNING",
+        },
+        "observability_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "observability.log",
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "encoding": "utf-8",
+            "formatter": "structured",
         },
     },
     "root": {
@@ -151,6 +163,11 @@ LOGGING = {
         },
         "chat": {
             "handlers": ["console", "app_file", "error_file"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "chat.observability": {
+            "handlers": ["observability_file"],
             "level": LOG_LEVEL,
             "propagate": False,
         },

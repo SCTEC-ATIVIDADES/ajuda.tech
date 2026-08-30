@@ -1,0 +1,39 @@
+{
+  "ai_analysis": {
+    "reason": "external AI unavailable; deterministic gate used",
+    "status": "not_called"
+  },
+  "anomalies": [],
+  "durations_ms": {
+    "catalog.notebook": 12.4,
+    "classify_msg": 1.2,
+    "respond": 3.1
+  },
+  "failures": [],
+  "probable_cause": null,
+  "risk": "low",
+  "run_id": "run-normal",
+  "slowest_stage": "catalog.notebook",
+  "stages": [
+    "request"
+  ],
+  "trace_id": "trace-normal",
+  "trend": {
+    "catalog.notebook": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "classify_msg": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "respond": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    }
+  },
+  "trend_limit": "500ms anomaly threshold; fewer than 2 comparable points means insufficient_data"
+}

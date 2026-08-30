@@ -30,7 +30,7 @@ from chat.exceptions import (
     ServiceUnavailableError,
 )
 from chat.services import OpenRouterClient
-from chat.observability import emit_event, execution_context, new_id
+from chat.observability import ExecutionTimeout, emit_event, execution_context, new_id
 
 logger = logging.getLogger(__name__)
 
@@ -206,15 +206,25 @@ class SendMessageView(View):
         history = _history(request)
         history.append({"role": "user", "content": message})
 
+        trace_id, run_id = new_id(), new_id()
+        started = time.perf_counter()
         try:
-            reply = self._get_client().chat_completion(_llm_history(history))
+            with execution_context(trace_id, run_id, getattr(settings, "LLM_TIMEOUT", 60)):
+                emit_event("request", "start", "started")
+                reply = self._get_client().chat_completion(_llm_history(history))
+                emit_event("request", "complete", "ok", duration_ms=(time.perf_counter() - started) * 1000)
+        except ExecutionTimeout as exc:
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            return JsonResponse({"error": "A execução excedeu o tempo limite."}, status=503)
         except AuthenticationError as exc:
-            logger.error("Falha de autenticação com OpenRouter: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.error("Falha de autenticação com OpenRouter")
             return JsonResponse(
                 {"error": "Erro de configuração do serviço de IA."}, status=500
             )
         except ServiceUnavailableError as exc:
-            logger.warning("OpenRouter indisponível: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("OpenRouter indisponível")
             return JsonResponse(
                 {
                     "error": "Serviço de IA temporariamente indisponível. Tente novamente.",
@@ -222,7 +232,8 @@ class SendMessageView(View):
                 status=503,
             )
         except RateLimitError as exc:
-            logger.warning("Erro ao processar resposta: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("Erro ao processar resposta")
             return JsonResponse(
                 {
                     "error": "Muitas requisições. Aguarde alguns segundos e tente novamente.",
@@ -230,7 +241,8 @@ class SendMessageView(View):
                 status=429,
             )
         except InvalidResponseError as exc:
-            logger.warning("Erro ao processar resposta: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("Erro ao processar resposta")
             return JsonResponse(
                 {"error": "Não foi possível processar a resposta."},
                 status=503,
@@ -265,18 +277,28 @@ class RecommendView(View):
         if not history:
             return JsonResponse({"error": "Envie uma mensagem antes de pedir recomendações."}, status=400)
 
+        trace_id, run_id = new_id(), new_id()
+        started = time.perf_counter()
         try:
-            products = self._get_client().get_product_recommendations(_llm_history(history))
+            with execution_context(trace_id, run_id, getattr(settings, "LLM_TIMEOUT", 60)):
+                emit_event("request", "start", "started")
+                products = self._get_client().get_product_recommendations(_llm_history(history))
+                emit_event("request", "complete", "ok", duration_ms=(time.perf_counter() - started) * 1000)
+        except ExecutionTimeout as exc:
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            return JsonResponse({"error": "A execução excedeu o tempo limite."}, status=503)
         except ServiceUnavailableError as exc:
-            logger.warning("OpenRouter indisponível ao gerar recomendações: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("OpenRouter indisponível ao gerar recomendações")
             return JsonResponse(
                 {"error": "Serviço temporariamente indisponível."}, status=503
             )
         except (AuthenticationError, InvalidResponseError, RateLimitError) as exc:
-            logger.error("Erro ao gerar recomendações: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.error("Erro ao gerar recomendações")
             return JsonResponse({"error": "Não foi possível gerar recomendações."}, status=503)
 
-        return JsonResponse({"products": products})
+        return JsonResponse({"products": products, "trace_id": trace_id, "run_id": run_id})
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -330,6 +352,8 @@ class AgentSendMessageView(View):
         history = _history(request)
         history.append({"role": "user", "content": message})
 
+        trace_id, run_id = new_id(), new_id()
+        started = time.perf_counter()
         try:
             messages = _llm_history(history)
 
@@ -339,8 +363,8 @@ class AgentSendMessageView(View):
             initial_state = {
                 "messages": messages,
                 "thread_id": thread_id,
-                "trace_id": new_id(),
-                "run_id": new_id(),
+                "trace_id": trace_id,
+                "run_id": run_id,
                 "recovered_context": {"user_needs": recovered_needs},
                 "user_needs": recovered_needs,
                 "products_found": [],
@@ -373,15 +397,22 @@ class AgentSendMessageView(View):
             if result.get("report"):
                 response_data["report"] = result["report"]
 
+            response_data["trace_id"] = trace_id
+            response_data["run_id"] = run_id
             return JsonResponse(response_data)
 
+        except ExecutionTimeout as exc:
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            return JsonResponse({"error": "A execução excedeu o tempo limite."}, status=503)
         except AuthenticationError as exc:
-            logger.error("Falha de autenticação com OpenRouter: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.error("Falha de autenticação com OpenRouter")
             return JsonResponse(
                 {"error": "Erro de configuração do serviço de IA."}, status=500
             )
         except ServiceUnavailableError as exc:
-            logger.warning("OpenRouter indisponível: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("OpenRouter indisponível")
             return JsonResponse(
                 {
                     "error": "Serviço de IA temporariamente indisponível. Tente novamente.",
@@ -389,7 +420,8 @@ class AgentSendMessageView(View):
                 status=503,
             )
         except RateLimitError as exc:
-            logger.warning("Rate limit atingido: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("Rate limit atingido")
             return JsonResponse(
                 {
                     "error": "Muitas requisições. Aguarde alguns segundos e tente novamente.",
@@ -397,13 +429,15 @@ class AgentSendMessageView(View):
                 status=429,
             )
         except InvalidResponseError as exc:
-            logger.warning("Erro ao processar resposta: %s", exc)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.warning("Erro ao processar resposta")
             return JsonResponse(
                 {"error": "Não foi possível processar a resposta."},
                 status=503,
             )
         except Exception as exc:
-            logger.error("Erro inesperado no agente LangGraph: %s", exc, exc_info=True)
+            emit_event("request", "complete", "error", duration_ms=(time.perf_counter() - started) * 1000, error=exc)
+            logger.error("Erro inesperado no agente LangGraph")
             return JsonResponse(
                 {"error": "Erro interno do agente. Tente novamente."},
                 status=500,

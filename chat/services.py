@@ -87,10 +87,10 @@ class ExternalCatalogClient:
                 if exc.code not in {"http_5xx", "timeout", "connection"}:
                     raise
                 last_error = exc
-            except requests.exceptions.Timeout as exc:
-                last_error = CatalogIntegrationError("timeout", f"Timeout da integração externa após {self.timeout}s: {exc}")
-            except requests.exceptions.ConnectionError as exc:
-                last_error = CatalogIntegrationError("connection", f"Erro de conexão na integração externa: {exc}")
+            except requests.exceptions.Timeout:
+                last_error = CatalogIntegrationError("timeout", "Timeout da integração externa.")
+            except requests.exceptions.ConnectionError:
+                last_error = CatalogIntegrationError("connection", "Erro de conexão na integração externa.")
             if attempt < self.max_retries:
                 try:
                     remaining_seconds()
@@ -228,7 +228,12 @@ class OpenRouterClient:
         }
 
     def _backoff_sleep(self, attempt: int) -> None:
-        time.sleep(2 ** attempt)
+        delay = 2 ** attempt
+        remaining = remaining_seconds()
+        if remaining is not None:
+            delay = min(delay, max(remaining, 0))
+        if delay > 0:
+            time.sleep(delay)
 
     def _chat_completion(self, messages: list[dict], *, is_extraction: bool = False) -> str:
         """Monta o payload e delega a execução com retry."""
@@ -263,15 +268,13 @@ class OpenRouterClient:
 
             except ServiceUnavailableError as exc:
                 last_exc = exc
-                emit_event("llm", "retry", "retryable", error=exc)
 
             except requests.exceptions.Timeout as exc:
                 last_exc = ServiceUnavailableError(f"Timeout após {self.timeout}s")
                 emit_event("llm", "timeout", "error", error=exc)
 
-            except requests.exceptions.ConnectionError as exc:
+            except requests.exceptions.ConnectionError:
                 last_exc = ServiceUnavailableError("Erro de conexão")
-                emit_event("llm", "retry", "retryable", error=exc)
 
             if attempt < self.max_retries:
                 try:
@@ -310,11 +313,12 @@ class OpenRouterClient:
                 detail = response.json().get("error", {}).get("message", "")
             except ValueError:
                 detail = response.text[:200]
-            raise InvalidResponseError(
-                f"Modelo indisponível ou sem créditos (HTTP 402): {detail}"
-            )
+            raise InvalidResponseError("Modelo indisponível ou sem créditos (HTTP 402).")
         if status == 429:
-            retry_after = int(response.headers.get("Retry-After", 10))
+            try:
+                retry_after = min(max(int(response.headers.get("Retry-After", 10)), 0), 300)
+            except (TypeError, ValueError):
+                retry_after = 10
             raise RateLimitError("Limite de requisições excedido (HTTP 429).", retry_after=retry_after)
         if status in _RETRYABLE_STATUS_CODES:
             raise ServiceUnavailableError(f"OpenRouter indisponível (HTTP {status}).")
@@ -323,15 +327,13 @@ class OpenRouterClient:
                 detail = response.json().get("error", {}).get("message", "")
             except ValueError:
                 detail = response.text[:200]
-            logger.error("Resposta inesperada da API (HTTP %d): %s", status, detail)
-            raise InvalidResponseError(
-                f"Resposta inesperada da API (HTTP {status}): {detail}"
-            )
+            logger.error("Resposta inesperada da API (HTTP %d)", status)
+            raise InvalidResponseError(f"Resposta inesperada da API (HTTP {status}).")
 
         try:
             body = response.json()
         except ValueError as exc:
-            raise InvalidResponseError(f"Resposta não é JSON válido: {exc}") from exc
+            raise InvalidResponseError("Resposta não é JSON válido.") from exc
 
         try:
             choices = body["choices"]
@@ -354,9 +356,7 @@ class OpenRouterClient:
             content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
             return content
         except (KeyError, IndexError, TypeError) as exc:
-            raise InvalidResponseError(
-                f"Estrutura de resposta inesperada: {exc}. Corpo: {body}"
-            ) from exc
+            raise InvalidResponseError("Estrutura de resposta inesperada.") from exc
 
     def _parse_products(self, content: str) -> list[dict]:
         """

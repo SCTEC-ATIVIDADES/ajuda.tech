@@ -14,7 +14,7 @@ import time
 from chat.services import OpenRouterClient
 from chat.agent.state import AgentState, CatalogBranchResult, CatalogJob
 from chat.agent.tools import buscar_produtos, comparar_produtos, gerar_relatorio
-from chat.observability import emit_event, stage
+from chat.observability import ExecutionTimeout, current_context, emit_event, execution_context, stage
 from chat.prompts import (
     build_agent_classification_prompt,
     build_agent_greeting_prompt,
@@ -255,32 +255,45 @@ def catalog_worker(state: AgentState) -> dict:
     """Executa um trabalho de catálogo sem derrubar outros ramos."""
     job: CatalogJob = state["branch_job"]
     started = time.perf_counter()
-    try:
-        data = json.loads(buscar_produtos.invoke({
-            "categoria": job["categoria"],
-            "orcamento_max": job["orcamento_max"],
-        }))
-        products = data.get("produtos", [])
-        result: CatalogBranchResult = {
-            "branch": job["branch"],
-            "categoria": job["categoria"],
-            "status": "ok",
-            "products": products,
-            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
-        }
-    except Exception:
-        result = {
-            "branch": job["branch"],
-            "categoria": job["categoria"],
-            "status": "error",
-            "products": [],
-            "error": "falha ao consultar catálogo",
-            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
-        }
-    logger.info("CATALOG branch=%s status=%s duration_ms=%.2f count=%d",
-                result["branch"], result["status"], result["duration_ms"],
-                len(result.get("products", [])))
-    return {"catalog_results": [result]}
+    parent = current_context()
+    trace_id = job.get("trace_id") or parent.get("trace_id")
+    run_id = job.get("run_id") or parent.get("run_id")
+    deadline = job.get("deadline") or parent.get("deadline")
+    timeout = None
+    if deadline:
+        timeout = max(deadline - time.monotonic(), 0.001)
+    with execution_context(trace_id, run_id, timeout):
+        emit_event(f"catalog.{job['branch']}", "start", "started")
+        try:
+            data = json.loads(buscar_produtos.invoke({
+                "categoria": job["categoria"],
+                "orcamento_max": job["orcamento_max"],
+            }))
+            products = data.get("produtos", [])
+            result: CatalogBranchResult = {
+                "branch": job["branch"],
+                "categoria": job["categoria"],
+                "status": "ok",
+                "products": products,
+                "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+            }
+            emit_event(f"catalog.{job['branch']}", "complete", "ok", duration_ms=result["duration_ms"])
+        except ExecutionTimeout:
+            raise
+        except Exception as exc:
+            result = {
+                "branch": job["branch"],
+                "categoria": job["categoria"],
+                "status": "error",
+                "products": [],
+                "error": "falha ao consultar catálogo",
+                "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+            }
+            emit_event(f"catalog.{job['branch']}", "complete", "error", duration_ms=result["duration_ms"], error=exc)
+        logger.info("CATALOG branch=%s status=%s duration_ms=%.2f count=%d",
+                    result["branch"], result["status"], result["duration_ms"],
+                    len(result.get("products", [])))
+        return {"catalog_results": [result]}
 
 
 def consolidate_catalog(state: AgentState) -> dict:
@@ -290,7 +303,14 @@ def consolidate_catalog(state: AgentState) -> dict:
     for result in state.get("catalog_results", []):
         products.extend(result.get("products", []))
         if result.get("status") == "error":
-            errors.append(f"{result['branch']}: {result.get('error', 'falha desconhecida')}")
+            errors.append(f"{result['branch']}: {result.get('error', 'falha controlada')}"[:200])
+    emit_event(
+        "catalog.consolidate",
+        "complete",
+        "partial" if errors and products else "error" if errors else "ok",
+        duration_ms=0,
+        error=RuntimeError("falha parcial") if errors else None,
+    )
     return {"products_found": products, "errors": errors, "stage": "catalog_consolidate"}
 
 
@@ -298,11 +318,14 @@ def compare_catalog_products(state: AgentState) -> dict:
     """Demonstra comparação quando catálogo oferece pelo menos dois produtos."""
     products = state.get("products_found", [])
     if len(products) < 2 or "id" not in products[0] or "id" not in products[1]:
+        emit_event("catalog.compare", "complete", "skipped")
         return {"comparison": "", "stage": "compare"}
     try:
         comparison = comparar_produtos.invoke({"produto_a_id": products[0]["id"], "produto_b_id": products[1]["id"]})
+        emit_event("catalog.compare", "complete", "ok")
     except Exception as exc:
-        logger.warning("CATALOG comparison failed: %s", exc)
+        logger.warning("CATALOG comparison failed")
+        emit_event("catalog.compare", "complete", "error", error=exc)
         comparison = ""
     return {"comparison": comparison, "stage": "compare"}
 
@@ -344,14 +367,19 @@ def report(state: AgentState) -> dict:
     orcamento = _parse_orcamento(needs.get("orcamento"), 5000.0)
     melhor_produto = min(produtos, key=lambda p: abs(p["preco"] - orcamento))
 
-    relatorio = gerar_relatorio.invoke({
+    try:
+        relatorio = gerar_relatorio.invoke({
         "nome": melhor_produto["nome"],
         "preco": melhor_produto["preco"],
         "tipo": melhor_produto["tipo"],
         "especificacoes": melhor_produto["especificacoes"],
-        "justificativa": f"Indicado para {', '.join(melhor_produto['indicado_para'])}. "
-                         f"Mobilidade: {melhor_produto['mobilidade']}.",
-    })
+            "justificativa": f"Indicado para {', '.join(melhor_produto['indicado_para'])}. "
+                             f"Mobilidade: {melhor_produto['mobilidade']}.",
+        })
+        emit_event("report", "complete", "ok")
+    except Exception as exc:
+        emit_event("report", "complete", "error", error=exc)
+        relatorio = "Relatório técnico indisponível no momento."
 
     return {
         "report": relatorio,

@@ -1,0 +1,42 @@
+{
+  "ai_analysis": {
+    "reason": "external AI unavailable; deterministic gate used",
+    "status": "not_called"
+  },
+  "anomalies": [
+    {
+      "duration_ms": 5011,
+      "stage": "request",
+      "threshold_ms": 500
+    }
+  ],
+  "durations_ms": {
+    "request": 5011
+  },
+  "failures": [
+    {
+      "error_type": "TimeoutError",
+      "stage": "llm"
+    },
+    {
+      "error_type": "ServiceUnavailableError",
+      "stage": "request"
+    }
+  ],
+  "probable_cause": "TimeoutError",
+  "risk": "high",
+  "run_id": "run-failure",
+  "slowest_stage": "request",
+  "stages": [
+    "request"
+  ],
+  "trace_id": "trace-failure",
+  "trend": {
+    "request": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    }
+  },
+  "trend_limit": "500ms anomaly threshold; fewer than 2 comparable points means insufficient_data"
+}

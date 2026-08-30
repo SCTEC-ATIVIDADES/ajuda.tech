@@ -4,6 +4,8 @@ Grafo LangGraph do assistente Herbert.
 Define o fluxo completo do agente com nós, edges e roteamento condicional.
 """
 
+import time
+
 from langgraph.graph import END, StateGraph
 from langgraph.types import Send
 
@@ -20,7 +22,7 @@ from chat.agent.nodes import (
     respond,
 )
 from chat.agent.state import AgentState
-from chat.observability import stage
+from chat.observability import current_context, execution_context, stage
 
 
 def _route_after_classify(state: AgentState) -> str:
@@ -47,14 +49,25 @@ def _should_continue_gathering(state: AgentState) -> str:
 
 
 def _fan_out_catalog(state: AgentState) -> list[Send]:
-    context = {key: state[key] for key in ("trace_id", "run_id", "deadline") if key in state}
+    parent = current_context()
+    context = {
+        key: state.get(key, parent.get(key))
+        for key in ("trace_id", "run_id", "deadline")
+        if state.get(key, parent.get(key)) is not None
+    }
     return [Send("catalog_worker", {"branch_job": {**job, **context}}) for job in state.get("catalog_jobs", [])]
 
 
 def _instrument(name, node):
     def wrapped(state):
-        with stage(name):
-            return node(state)
+        context = current_context()
+        trace_id = state.get("trace_id") or context.get("trace_id")
+        run_id = state.get("run_id") or context.get("run_id")
+        deadline = state.get("deadline") or context.get("deadline")
+        timeout = max(deadline - time.monotonic(), 0.001) if deadline else None
+        with execution_context(trace_id, run_id, timeout):
+            with stage(name):
+                return node(state)
     return wrapped
 
 

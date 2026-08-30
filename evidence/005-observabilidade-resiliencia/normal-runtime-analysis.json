@@ -1,0 +1,148 @@
+{
+  "ai_analysis": {
+    "reason": "external AI unavailable; deterministic gate used",
+    "status": "not_called"
+  },
+  "anomalies": [],
+  "durations_ms": {
+    "catalog.compare": 0.0,
+    "catalog.consolidate": 0.0,
+    "catalog.desktop": 5.73,
+    "catalog.notebook": 5.76,
+    "catalog_worker": 12.75,
+    "classify_msg": 0.34,
+    "compare_catalog_products": 2.94,
+    "consolidate_catalog": 0.15,
+    "gather_needs": 0.16,
+    "prepare_catalog": 0.06,
+    "recommend": 0.18,
+    "report": 0.71,
+    "request": 30.41,
+    "respond": 0.2,
+    "tool.buscar_produtos": 10.0,
+    "tool.comparar_produtos": 2.28,
+    "tool.gerar_relatorio": 0.08
+  },
+  "failures": [],
+  "probable_cause": null,
+  "risk": "low",
+  "run_id": "20306bc6-9e32-436e-afad-2b0d3c8a5d01",
+  "slowest_stage": "request",
+  "stages": [
+    "request",
+    "classify_msg",
+    "gather_needs",
+    "prepare_catalog",
+    "catalog_worker",
+    "catalog.notebook",
+    "tool.buscar_produtos",
+    "catalog_worker",
+    "catalog.desktop",
+    "tool.buscar_produtos",
+    "consolidate_catalog",
+    "compare_catalog_products",
+    "tool.comparar_produtos",
+    "recommend",
+    "report",
+    "tool.gerar_relatorio",
+    "respond"
+  ],
+  "trace_id": "f2317519-5aaa-45bc-bde4-6f95c95c0cbe",
+  "trend": {
+    "catalog.compare": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog.consolidate": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog.desktop": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog.notebook": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog_worker": {
+      "change_percent": -3.85,
+      "first_ms": 6.5,
+      "last_ms": 6.25,
+      "method": "first_to_last_percent_change",
+      "status": "computed",
+      "uncertainty": "high: two observations; no confidence interval"
+    },
+    "classify_msg": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "compare_catalog_products": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "consolidate_catalog": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "gather_needs": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "prepare_catalog": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "recommend": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "report": {
+      "change_percent": 0,
+      "first_ms": 0.0,
+      "last_ms": 0.71,
+      "method": "first_to_last_percent_change",
+      "status": "computed",
+      "uncertainty": "high: two observations; no confidence interval"
+    },
+    "request": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "respond": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "tool.buscar_produtos": {
+      "change_percent": -3.15,
+      "first_ms": 5.08,
+      "last_ms": 4.92,
+      "method": "first_to_last_percent_change",
+      "status": "computed",
+      "uncertainty": "high: two observations; no confidence interval"
+    },
+    "tool.comparar_produtos": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "tool.gerar_relatorio": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    }
+  },
+  "trend_limit": "500ms anomaly threshold; fewer than 2 comparable points means insufficient_data"
+}

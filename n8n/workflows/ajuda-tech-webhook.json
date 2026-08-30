@@ -66,7 +66,7 @@
     "Validate and sign": {"main": [[{"node": "Send to Ajuda Tech", "type": "main", "index": 0}]]},
     "Send to Ajuda Tech": {"main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]}
   },
-  "active": false,
+  "active": true,
   "settings": {"executionOrder": "v1"},
   "versionId": "00000000-0000-0000-0000-000000000008",
   "meta": {"templateCredsSetupCompleted": true},

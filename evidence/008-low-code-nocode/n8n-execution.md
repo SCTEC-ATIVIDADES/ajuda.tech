@@ -2,11 +2,11 @@
 
 - Data: 2026-08-30.
 - Stack: `app`, `catalog` e `n8n` subidos por Docker Compose.
-- Workflow importado e ativado no n8n: `Ajuda Tech webhook`, ID interno `Cvnrk6Lw0GhkWXfI`.
-- Após reiniciar o n8n, os logs registraram: `Activated workflow "Ajuda Tech webhook"`.
-- Após o reset do volume, uma nova importação foi realizada e o workflow ficou disponível no editor.
+- Workflow importado e ativado automaticamente pelo serviço `n8n-init`: `Ajuda Tech webhook`.
+- O bootstrap monta o export versionado, importa apenas quando marcador de volume não existe e preserva configuração em reinícios.
+- Validação limpa executada em 2026-08-30T21:30Z com volume novo: `n8n-init` importou 1 workflow e o n8n iniciou com healthcheck HTTP 200. `n8n list:workflow --only-active` confirmou `Ajuda Tech webhook` ativo.
 - Healthcheck n8n: `{"status":"ok"}`.
-- O runtime registrou workflow ativo; isso não altera o export versionado, que mantém `active: false`. Estado runtime observado em 2026-08-30, workflow ID `Cvnrk6Lw0GhkWXfI`; não há export runtime anexado para provar persistência após reinício.
+- O export versionado declara `active: true`; o runtime recebe essa configuração no bootstrap. O volume nomeado preserva workflow e credenciais internas entre reinícios.
 
 ## Trigger
 

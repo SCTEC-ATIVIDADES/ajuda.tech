@@ -28,6 +28,25 @@ services:
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
 
+  n8n-init:
+    image: n8nio/n8n:1.109.2
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        if [ ! -f /home/node/.n8n/.ajuda-tech-workflow-imported ]; then
+          n8n import:workflow --input=/workflows/ajuda-tech-webhook.json &&
+          touch /home/node/.n8n/.ajuda-tech-workflow-imported;
+        fi
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows/ajuda-tech-webhook.json:/workflows/ajuda-tech-webhook.json:ro
+    depends_on:
+      app:
+        condition: service_started
+
   n8n:
     image: n8nio/n8n:1.109.2
     ports:
@@ -44,8 +63,12 @@ services:
       AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:?AUTOMATION_WEBHOOK_SECRET is required}
     volumes:
       - n8n_data:/home/node/.n8n
+    command: start
     depends_on:
-      - app
+      app:
+        condition: service_started
+      n8n-init:
+        condition: service_completed_successfully
 
 volumes:
   n8n_data:

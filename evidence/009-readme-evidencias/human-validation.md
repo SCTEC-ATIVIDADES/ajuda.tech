@@ -1,6 +1,6 @@
 # Validação humana — README e evidências
 
-DATA: 2026-08-29
+DATA: 2026-08-30
 ESCOPO: README, matriz de 15 critérios, docs de arquitetura/fluxo e evidências 006–009.
 
 CRITÉRIOS:
@@ -14,4 +14,4 @@ CRITÉRIOS:
 
 DECISÃO: ACEITO PARCIALMENTE PARA ENTREGA DA SPEC 009.
 
-PENDÊNCIAS ACEITAS: validar ambiente limpo; obter serviço externo controlado; publicar HTTPS n8n se exigido; anexar vídeo, Kanban e permissões se exigidos pelo aceite final.
+PENDÊNCIAS ACEITAS: catálogo externo de terceiro; publicar HTTPS n8n se exigido; anexar vídeo, Kanban e permissões se exigidos pelo aceite final. Ambiente limpo validado em clone temporário: Compose, catálogo, app e n8n subiram; workflow foi importado e ativado; webhook recebeu e processou a requisição, mas resposta final foi limitada por 429 da sessão. Evidência detalhada em `verification.md`.

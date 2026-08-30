@@ -39,6 +39,7 @@ services:
       N8N_PORT: 5678
       N8N_PROTOCOL: http
       NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
       AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-change-me}
     volumes:
       - n8n_data:/home/node/.n8n

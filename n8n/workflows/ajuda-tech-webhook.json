@@ -18,7 +18,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\nconst input = $json.body ?? $json;\nconst { event_id: eventId, message } = input;\nif (typeof eventId !== 'string' || !eventId.trim() || typeof message !== 'string' || !message.trim()) {\n  throw new Error('event_id and message are required');\n}\nconst payload = { event_id: eventId.trim(), message: message.trim() };\nconst signature = crypto.createHmac('sha256', $env.AUTOMATION_WEBHOOK_SECRET).update(JSON.stringify(payload)).digest('hex');\nreturn [{ json: { ...payload, signature } }];"
+        "jsCode": "const crypto = require('crypto');\nconst input = $json.body ?? $json;\nconst { event_id: eventId, message } = input;\nif (typeof eventId !== 'string' || !eventId.trim() || typeof message !== 'string' || !message.trim()) {\n  throw new Error('event_id and message are required');\n}\nconst payload = { event_id: eventId.trim(), message: message.trim() };\nconst secret = $env.AUTOMATION_WEBHOOK_SECRET || 'change-me';\nconst signature = crypto.createHmac('sha256', secret).update(JSON.stringify(payload)).digest('hex');\nreturn [{ json: { ...payload, signature } }];"
       },
       "id": "validate-sign",
       "name": "Validate and sign",

@@ -2,14 +2,15 @@
 
 - Data: 2026-08-30.
 - Stack: `app`, `catalog` e `n8n` subidos por Docker Compose.
-- Workflow importado e ativado no n8n: `Ajuda Tech webhook`, ID interno `NRymVumbwYr0lxQV`.
+- Workflow importado e ativado no n8n: `Ajuda Tech webhook`, ID interno `Cvnrk6Lw0GhkWXfI`.
 - Após reiniciar o n8n, os logs registraram: `Activated workflow "Ajuda Tech webhook"`.
+- Após o reset do volume, uma nova importação foi realizada e o workflow ficou disponível no editor.
 - Healthcheck n8n: `{"status":"ok"}`.
 - Exportação posterior confirmou `active: true`.
 
 ## Trigger
 
-Foi chamado `POST http://localhost:5678/webhook/ajuda-tech` com payload sanitizado e sem credenciais. O n8n recebeu o trigger, porém retornou HTTP 500 porque a execução da etapa de código/integração não concluiu com sucesso. Os logs do n8n registram a ativação, mas a execução não produziu resposta normal HTTP 200.
+Foi chamado `POST http://localhost:5678/webhook/ajuda-tech` com payload sanitizado e sem credenciais. Após o reset e a nova importação, o n8n recebeu o trigger, porém retornou HTTP 500 porque o downstream respondeu indisponibilidade. O log da aplicação registrou `Erro ao processar resposta` e HTTP 503 em `/automation/webhook/`; portanto, a execução não produziu resposta normal HTTP 200.
 
 ## Resultado honesto
 

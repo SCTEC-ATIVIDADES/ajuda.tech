@@ -2,7 +2,6 @@
 
 from chat.prompts import (
     build_agent_classification_prompt,
-    build_agent_context_prompt,
     build_agent_followup_prompt,
     build_agent_greeting_prompt,
     build_agent_needs_prompt,
@@ -28,11 +27,6 @@ def test_build_agent_needs_prompt_returns_string():
     assert isinstance(result, str)
     assert len(result) > 0
 
-
-def test_build_agent_context_prompt_returns_string():
-    result = build_agent_context_prompt({"proposito": "estudos"})
-    assert isinstance(result, str)
-    assert "estudos" in result
 
 
 def test_build_agent_recommendation_prompt_returns_string():

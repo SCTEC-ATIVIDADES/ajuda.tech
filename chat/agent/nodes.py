@@ -21,7 +21,6 @@ from chat.prompts import (
     build_agent_needs_prompt,
     build_agent_recommendation_prompt,
     build_agent_response_prompt,
-    build_agent_context_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -204,28 +203,6 @@ def gather_needs(state: AgentState) -> dict:
         "stage": "gather",
     }
 
-
-def extract_context(state: AgentState) -> dict:
-    """Nó de extração — valida e organiza os dados coletados."""
-    needs = state.get("user_needs", {})
-
-    prompt = build_agent_context_prompt(needs)
-
-    response = _call_llm([{"role": "user", "content": prompt}])
-
-    try:
-        clean_response = _strip_cot(response).strip()
-        if clean_response.startswith("```"):
-            clean_response = clean_response.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-        result = json.loads(clean_response)
-    except (json.JSONDecodeError, ValueError):
-        result = {"suficiente": bool(needs.get("proposito") and needs.get("orcamento")),
-                  "mensagem_confirmacao": "", "faltando": []}
-
-    return {
-        "stage": "extract",
-        "recommendation": result.get("mensagem_confirmacao", ""),
-    }
 
 
 def _parse_orcamento(value, default: float = 5000.0) -> float:

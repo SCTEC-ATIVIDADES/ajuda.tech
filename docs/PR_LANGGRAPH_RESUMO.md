@@ -15,8 +15,6 @@ Agente **Herbert** implementado com **LangGraph**, estado tipado (`AgentState`) 
 | `nodes.py` | Nós `classify_msg`, `gather_needs`, `prepare_catalog`, `catalog_worker`, `consolidate_catalog`, `recommend`, `report` e `respond`, além de `greet` |
 | `graph.py` | `StateGraph` compilado com roteamento condicional, `Send` e reducers |
 
-`extract_context` permanece disponível em `nodes.py`, mas não pertence ao grafo atual.
-
 ### Fluxo do Agente
 
 ```text
@@ -30,7 +28,7 @@ START → classify_msg → [greet → END | gather_needs → respond | prepare_c
 
 ### Integração
 
-- `chat/views.py` — endpoint `AgentSendMessageView` (`POST /chat/agent/send/`)
+- `chat/views.py` — endpoint `AgentSendMessageView` (`POST /agent/send/`)
 - `chat/urls.py` — rota `/agent/send/`
 - `requirements.txt` — dependências LangGraph e LangChain Core
 - `produtos.json` — catálogo local
@@ -57,17 +55,12 @@ class AgentState(TypedDict, total=False):
 ## Como Executar
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python manage.py migrate
 python manage.py runserver
 ```
 
-Endpoint:
-
-```bash
-curl -X POST http://localhost:8000/chat/agent/send/ \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Olá, preciso de um notebook para estudos"}'
-```
+Endpoint protegido por CSRF; use cliente/browser que preserve cookie e token CSRF. Rota: `POST /agent/send/`.
 
 ## Documentação Relacionada
 

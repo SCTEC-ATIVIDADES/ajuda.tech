@@ -115,29 +115,6 @@ Se o usuário não forneceu uma informação ainda, deixe null.
 Retorne APENAS o JSON, sem texto adicional."""
 
 
-def build_agent_context_prompt(needs: dict) -> str:
-    """Monta o prompt de validação das necessidades coletadas."""
-    return f"""Você é Herbert, assistente da Ajuda Tech.
-
-Analise as necessidades coletadas do usuário e confirme se estão suficientes
-para fazer uma recomendação:
-
-{json.dumps(needs, ensure_ascii=False, indent=2)}
-
-Necessidades mínimas para recomendar:
-- propósito de uso (obrigatório)
-- orçamento ou faixa de preço (obrigatório)
-
-Responda um JSON:
-{{
-  "suficiente": true/false,
-  "mensagem_confirmacao": "resumo do que entendeu do usuário",
-  "faltando": ["lista de informações faltantes"]
-}}
-
-Retorne APENAS o JSON."""
-
-
 def build_agent_recommendation_prompt(
     proposito: str,
     orcamento: float,

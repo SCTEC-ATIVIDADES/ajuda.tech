@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 from chat.agent.graph import (
@@ -7,6 +8,20 @@ from chat.agent.graph import (
     build_graph,
 )
 from chat.agent.nodes import catalog_worker, consolidate_catalog, gather_needs
+from chat.observability import clear_metrics, execution_context, metrics_snapshot
+
+
+PRODUCTS = [
+    {
+        "id": 1,
+        "nome": "Notebook Estudo",
+        "tipo": "notebook",
+        "preco": 3000.0,
+        "especificacoes": {"ram": "8GB"},
+        "indicado_para": ["estudos"],
+        "mobilidade": "alta",
+    }
+]
 
 
 def test_build_graph_compiles():
@@ -19,6 +34,36 @@ def test_routes_classified_intents():
     assert _route_after_classify({"classified_intent": "saudacao"}) == "greet"
     assert _route_after_classify({"classified_intent": "recomendacao"}) == "recommend"
     assert _route_after_classify({"classified_intent": "dados"}) == "gather_needs"
+    assert _route_after_classify({"classified_intent": "desconhecida"}) == "gather_needs"
+
+
+@patch("chat.agent.nodes._call_llm", side_effect=["dados", '{"proposito": "estudos", "orcamento": 3000}', "Recomendação", "Resposta"])
+@patch("chat.agent.nodes.buscar_produtos")
+def test_compiled_graph_runs_complete_flow(mock_buscar_produtos, mock_call_llm):
+    mock_buscar_produtos.invoke.return_value = json.dumps({"produtos": PRODUCTS})
+
+    result = build_graph().compile().invoke({"messages": [{"role": "user", "content": "Quero estudar"}]})
+
+    assert result["stage"] == "respond"
+    assert result["products_found"]
+    assert result["report"]
+    assert result["messages"][-1].content == "Resposta"
+    assert mock_call_llm.call_count == 4
+
+
+def test_complete_flow_records_correlated_stages():
+    clear_metrics()
+    with execution_context("trace-graph", "run-graph"):
+        with patch("chat.agent.nodes._call_llm", side_effect=["dados", '{"proposito": "estudos", "orcamento": 3000}', "Recomendação", "Resposta"]), patch("chat.agent.nodes.buscar_produtos") as buscar_produtos:
+            buscar_produtos.invoke.return_value = json.dumps({"produtos": PRODUCTS})
+            build_graph().compile().invoke({"messages": [{"role": "user", "content": "Quero estudar"}]})
+
+    records = metrics_snapshot()
+    assert {record["event"] for record in records} >= {"start", "complete"}
+    assert {record["trace_id"] for record in records} == {"trace-graph"}
+    assert {record["run_id"] for record in records} == {"run-graph"}
+    assert all(record["count"] > 0 for record in records)
+    clear_metrics()
 
 
 def test_routes_gathering_by_required_needs():

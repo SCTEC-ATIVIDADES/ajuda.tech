@@ -20,7 +20,7 @@ services:
     environment:
       ALLOWED_HOSTS: localhost,127.0.0.1,app
       CATALOG_API_URL: http://catalog:8080/products
-      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-change-me}
+      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:?AUTOMATION_WEBHOOK_SECRET is required}
     volumes:
       - .:/app
     working_dir: /app
@@ -33,14 +33,15 @@ services:
     ports:
       - "5678:5678"
     environment:
-      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
       N8N_SECURE_COOKIE: "false"
       N8N_HOST: localhost
       N8N_PORT: 5678
       N8N_PROTOCOL: http
       NODE_FUNCTION_ALLOW_BUILTIN: crypto
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
-      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-change-me}
+      N8N_LOG_LEVEL: debug
+      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:?AUTOMATION_WEBHOOK_SECRET is required}
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:

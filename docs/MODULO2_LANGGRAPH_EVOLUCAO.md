@@ -1,6 +1,6 @@
 # Módulo 2 — Evolução do Projeto com LangGraph
 
-> Documento de análise e planejamento para discussão em grupo.
+> Documento histórico de análise e planejamento, não fonte operacional do código atual.
 > Criado em: 2026-07-16
 
 Trabalho módulo 2 com LangGraph
@@ -13,7 +13,7 @@ Slides:
 https://gamma.app/docs/Ajuda-Tech-Problema-e-Solucao-r9t5jfg1cwkiv0e
 
 Repositório:
-https://github.com/SCTECH-ATIVIDADES/ajuda.tech
+https://github.com/SCTEC-ATIVIDADES/ajuda.tech
 
 
 ---
@@ -33,23 +33,22 @@ O **Ajuda Tech** é um chatbot com IA (Herbert) que ajuda usuários leigos a esc
 
 ```
 Usuário digita mensagem
-  → POST /send/ com JSON {"message": "..."}
-  → Django recupera histórico da sessão (cookie)
-  → OpenRouterClient monta: system_prompt + histórico + mensagem
-  → Chama API do OpenRouter (1 call)
-  → Retorna {"reply": "..."}
+  → POST /agent/send/ com JSON {"message": "..."}
+  → Django valida sessão, limites, CSRF e injection
+  → LangGraph classifica, coleta necessidades e consulta catálogo
+  → Tools agregam resultados; OpenRouter gera recomendação
+  → Retorna {"reply": "...", "report": "..."}
   → Frontend renderiza
 ```
 
-### Limitações do modelo atual
+### Limitações conhecidas
 
 | Limitação | Impacto |
 |-----------|---------|
-| Call única de LLM por mensagem | Sem raciocínio multi-etapas |
 | Histórico em cookie (50 msgs max) | Perde contexto em conversas longas |
-| Sem tools/ferramentas | Não busca dados reais de produtos |
-| Sem validação entre etapas | Pode gerar recomendações inconsistentes |
-| System prompt único e fixo | Mesmo prompt para saudação, coleta e recomendação |
+| Catálogo externo opcional | Serviço real não foi validado |
+| Sessão sem checkpointer externo | Contexto limitado à sessão Django |
+| n8n self-hosted | Sem URL HTTPS pública validada |
 
 ---
 
@@ -57,13 +56,13 @@ Usuário digita mensagem
 
 ### Checklist de requisitos
 
-- [ ] Definir um processo real a ser automatizado (objetivo, entrada, etapas, saída)
-- [ ] Implementar com LangGraph (estado, nós, conexões)
-- [ ] Integrar pelo menos 1 ferramenta (tool)
-- [ ] Usar memória/contexto durante execução
-- [ ] Registrar prompts em arquivo `.md`
-- [ ] Documentar no `README.md` (como funciona, como executar, decisões)
-- [ ] Versionado no GitHub com contribuições rastreáveis
+- [x] Definir processo real automatizado
+- [x] Implementar com LangGraph (estado, nós, conexões)
+- [x] Integrar tools read-only
+- [x] Usar memória/contexto da sessão
+- [x] Registrar prompts e decisões
+- [x] Documentar no `README.md`
+- [x] Versionar contribuições rastreáveis
 
 ### Requisitos detalhados (seção 5.3)
 

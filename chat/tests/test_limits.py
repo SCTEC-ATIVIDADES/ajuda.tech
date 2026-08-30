@@ -106,3 +106,28 @@ class TestRateLimiting:
         response = _post_message(django_client, "mensagem 11")
         data = response.json()
         assert "error" in data
+
+
+@pytest.mark.django_db
+def test_agent_sends_at_most_20_messages_to_graph(client):
+    with patch("chat.views._get_agent_graph") as get_graph, patch(
+        "chat.views._rate_limit_response", return_value=None
+    ):
+        get_graph.return_value.invoke.return_value = {
+            "messages": [{"role": "assistant", "content": "resposta"}],
+            "user_needs": {},
+        }
+        for i in range(11):
+            session = client.session
+            session["chat_rate_limit"] = []
+            session.save()
+            client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": f"mensagem {i}"}),
+                content_type="application/json",
+            )
+
+    messages = get_graph.return_value.invoke.call_args.args[0]["messages"]
+    assert len(messages) == 20
+    assert messages[0]["content"] == "resposta"
+    assert messages[-1]["content"] == "mensagem 10"

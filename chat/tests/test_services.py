@@ -17,6 +17,8 @@ from unittest.mock import patch, MagicMock, call
 
 import requests as req_module
 
+from chat.observability import clear_metrics, execution_context, metrics_snapshot
+
 from chat.exceptions import (
     AuthenticationError,
     InvalidResponseError,
@@ -280,6 +282,27 @@ class TestRetryLogic:
         # Cada espera deve ser maior que a anterior (backoff exponencial)
         for i in range(1, len(sleep_calls)):
             assert sleep_calls[i] >= sleep_calls[i - 1]
+
+    @patch("chat.services.emit_event")
+    @patch("chat.services.time.sleep")
+    @patch("chat.services.requests.post")
+    def test_timeout_emits_timeout_and_retry_events(self, mock_post, mock_sleep, emit, client):
+        mock_post.side_effect = req_module.exceptions.Timeout()
+        with pytest.raises(ServiceUnavailableError):
+            with execution_context("trace-retry", "run-retry"):
+                client.chat_completion([{"role": "user", "content": "test"}])
+        events = [call.args[1] for call in emit.call_args_list]
+        assert "timeout" in events
+        assert "retry" in events
+
+    @patch("chat.services.emit_event")
+    @patch("chat.services.requests.post")
+    def test_429_emits_failure_without_retry(self, mock_post, emit, client):
+        mock_post.return_value = make_mock_response(429)
+        with pytest.raises(RateLimitError):
+            client.chat_completion([{"role": "user", "content": "test"}])
+        assert mock_post.call_count == 1
+        assert [call.args[1] for call in emit.call_args_list] == ["failure"]
 
     @patch("chat.services.time.sleep")
     @patch("chat.services.requests.post")

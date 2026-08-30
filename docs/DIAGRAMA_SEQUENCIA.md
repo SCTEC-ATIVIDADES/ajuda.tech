@@ -1,102 +1,65 @@
-# Diagrama de Sequência - Fluxo de Processamento de Mensagem
+# Diagrama de Sequência — Fluxo Principal
 
-**Estado atual do MVP:** Chat sem login, histórico em sessão, sem persistência de conversa no banco.
-
-## Código PlantUML
+Estado atual: chat sem login, sessão Django assinada, sem banco de conversas e sem checkpointer externo.
 
 ```plantuml
 @startuml
-title Fluxo de Processamento de Mensagem - ajuda.tech (MVP Atual)
+title POST /agent/send/ — Ajuda Tech
 
-actor "Usuário Leigo" as User
-participant "Frontend\n(Chat Interface)" as Frontend
-participant "Django View\n(chat/views.py)" as DjangoView
-participant "Session\n(Cookie assinado)" as Session
-participant "LLM Service\n(chat/services.py)" as LLMService
-participant "System Prompt\n(chat/prompts.py)" as SystemPrompt
-participant "OpenRouter API" as OpenRouter
+actor Usuário
+participant Frontend
+participant "AgentSendMessageView\nchat/views.py" as View
+participant "Sessão Django" as Session
+participant "StateGraph\nchat/agent/graph.py" as Graph
+participant "Catálogo/tools" as Catalog
+participant "OpenRouter\nchat/services.py" as LLM
 
-== Etapa 1: Envio da Mensagem ==
-User ->> Frontend: Digita mensagem informal
-Frontend ->> Frontend: Valida entrada\n(texto não vazio)
-Frontend ->> DjangoView: POST /send/\n(JSON: {message})
-
-== Etapa 2: Recuperação do Histórico ==
-DjangoView ->> Session: GET histórico da sessão\n(request.session["chat_history"])
-Session -->> DjangoView: Lista de mensagens anteriores
-
-== Etapa 3: Processamento pela LLM ==
-DjangoView ->> LLMService: chat_completion(messages)
-LLMService ->> SystemPrompt: Lê SYSTEM_PROMPT (constante)
-SystemPrompt -->> LLMService: SYSTEM_PROMPT
-LLMService ->> LLMService: Constrói full_messages\n([system] + messages)
-LLMService ->> OpenRouter: POST /chat/completions\n(Headers: Authorization: Bearer API_KEY)
-OpenRouter ->> OpenRouter: Processa requisição\n(seleciona modelo LLM)
-OpenRouter -->> LLMService: Response JSON\n(resposta de texto)
-
-== Etapa 4: Atualização da Sessão ==
-LLMService -->> DjangoView: Texto da resposta
-DjangoView ->> DjangoView: Atualiza request.session["chat_history"]
-DjangoView -->> Frontend: JSON Response\n{"reply": reply}
+Usuário -> Frontend: Digita mensagem
+Frontend -> View: POST /agent/send/\nJSON + X-CSRFToken
+View -> View: Valida body, mensagem, injection e rate limit
+View -> Session: Lê histórico e necessidades
+Session --> View: Contexto limitado
+View -> Graph: Invoca AgentState
+Graph -> Graph: classify_msg
+alt Cumprimento
+  Graph --> View: resposta greet
+else Dados insuficientes
+  Graph --> View: pergunta respond
+else Propósito + orçamento
+  Graph -> Catalog: Send notebook
+  Graph -> Catalog: Send desktop
+  Catalog --> Graph: resultados ou falhas parciais
+  Graph -> Graph: consolidate → compare → recommend → report → respond
+  Graph --> View: resposta final
+end
+View -> Session: Salva histórico, necessidades, thread_id e run_id
+View --> Frontend: JSON {reply}
+Frontend -> Frontend: Markdown + DOMPurify
 
 @enduml
 ```
 
-## Como Visualizar o Diagrama
+## Limites e falhas
 
-Com a extensão **PlantUML** instalada no seu editor (VS Code, IntelliJ, etc.), você tem as seguintes opções:
+- Corpo: 8.192 bytes; mensagem: 4.000 caracteres.
+- Histórico: 50 entradas; janela enviada ao LLM: 20 mensagens.
+- Rate limit: 10 requisições por sessão em 60 segundos; bloqueio ocorre antes do grafo/LLM.
+- Timeout, conexão e HTTP 5xx do LLM/catálogo têm retry limitado. Falha de catálogo não derruba outro ramo.
+- `/new/` limpa sessão via `POST`. GET `/` não limpa histórico.
+- Webhook `/automation/webhook/` é fluxo separado: HMAC, validação e idempotência.
 
-### Opção 1: Visualização Direta no Editor
-1. Abra o arquivo `DIAGRAMA_SEQUENCIA.md` no seu editor
-2. O diagrama será renderizado automaticamente se a extensão PlantUML estiver ativa
-3. Caso não renderize automaticamente, clique com o botão direito no código PlantUML e selecione **"Preview PlantUML"** ou **"Open Preview to the Side"**
+## Visualização
 
-### Opção 2: Atalhos do VS Code
-- **Windows/Linux**: `Ctrl + Shift + P` → Digite "PlantUML" → Selecione "Preview Current Diagram"
-- **Mac**: `Cmd + Shift + P` → Mesmo processo
+Use extensão PlantUML no editor. Java/Graphviz podem ser necessários para renderização local.
 
-### Opção 3: Exportar como Imagem
-1. Com a extensão PlantUML instalada, você também pode:
-   - Clicar com botão direito no diagrama
-   - Selecionar **"Export Current Diagram"**
-   - Escolher o formato (PNG, SVG, etc.)
+## Componentes
 
-### Dependências da Extensão
-A extensão PlantUML geralmente requer:
-- **Java** instalado (para executar o servidor PlantUML local)
-- **Graphviz** (instalado separadamente para renderização)
-
-Se o diagrama não aparecer, verifique se essas dependências estão instaladas corretamente.
-
-## Descrição do Fluxo (MVP Simplificado)
-
-| Etapa | Ator/Componente | Descrição |
-|-------|-----------------|-----------|
-| 1 | Usuário Leigo | Usuário digita mensagem informal no frontend |
-| 2 | Frontend | Interface valida e envia via AJAX para Django |
-| 3 | Session (Memória) | Recupera histórico da conversa (sem banco de dados) |
-| 4 | LLM Service | Combina contexto + System Prompt para enviar à API |
-| 5 | OpenRouter | Gateway que gerencia múltiplos modelos de LLM |
-| 6 | Text Processor | Parser que separa explicação amigável de specs técnicas |
-| 7 | Frontend | Renderiza com destaque para explicação e dropdown para specs |
-
-## Alterações do MVP Simplificado
-
-### Removido
-- ~~Banco de Dados PostgreSQL~~
-- ~~Transações de banco~~
-- ~~Models de usuário~~
-- ~~Sistema de autenticação~~
-- ~~Migrações de banco~~
-
-### Adicionado
-- **Session (Memória)**: Armazenamento temporário do histórico da conversa
-- **Cookie de sessão**: Para manter o contexto entre requisições
-- **Limite de mensagens**: 50 mensagens por sessão (para evitar abusos)
-
-## Elementos do Diagrama
-
-- **Seta sólida (→)**: Fluxo síncrono de requisição/resposta
-- **Seta tracejada (--)**: Retorno de dados ou resposta
-- **Caixas empilhadas**: Instâncias paralelas do mesmo componente
-- **Notas**: Informações adicionais sobre cada etapa
+| Componente | Papel |
+|---|---|
+| `chat/views.py` | HTTP, segurança, sessão |
+| `chat/agent/graph.py` | StateGraph, roteamento e fan-out/fan-in |
+| `chat/agent/nodes.py` | classificação, catálogo, recomendação e resposta |
+| `chat/agent/tools.py` | catálogo e relatório |
+| `chat/services.py` | OpenRouter, retry, timeout e sanitização |
+| `chat/prompts.py` | prompts internos |
+| Frontend | contrato JSON e renderização sanitizada |

@@ -1,3 +1,5 @@
+# Documento histórico — prompt da Issue #5; não descreve arquitetura operacional atual
+
 # Prompt — Issue #5: Diagrama Mermaid do Ecossistema
 
 ## 1. Prompt Utilizado

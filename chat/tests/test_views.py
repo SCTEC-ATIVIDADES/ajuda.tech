@@ -218,6 +218,28 @@ class TestSendMessageView:
         assert emit.call_args.args[:3] == ("memory", "persist", "error")
         assert isinstance(emit.call_args.kwargs["error"], RuntimeError)
 
+    def test_agent_reuses_thread_id_across_requests(self, django_client):
+        with patch("chat.views._get_agent_graph") as get_graph:
+            get_graph.return_value.invoke.side_effect = [
+                {"messages": [{"role": "assistant", "content": "Primeira"}], "user_needs": {}},
+                {"messages": [{"role": "assistant", "content": "Segunda"}], "user_needs": {}},
+            ]
+            first = django_client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": "Primeira mensagem"}),
+                content_type="application/json",
+            )
+            second = django_client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": "Segunda mensagem"}),
+                content_type="application/json",
+            )
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        calls = get_graph.return_value.invoke.call_args_list
+        assert calls[0].args[0]["thread_id"] == calls[1].args[0]["thread_id"]
+
 
     @patch("chat.views.OpenRouterClient")
     def test_returns_500_when_authentication_fails(self, MockClient, django_client):

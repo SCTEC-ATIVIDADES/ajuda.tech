@@ -1,10 +1,13 @@
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
+ROOT_DIR = Path(__file__).resolve().parent
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ajuda_tech.settings")
+sys.path.insert(0, str(ROOT_DIR))
 
 import django
 from django.test import Client, override_settings
@@ -39,11 +42,19 @@ def capture(path, catalog_url, llm_responses, run_name):
                     data=json.dumps({"message": "Quero notebook para estudar por até 3000"}),
                     content_type="application/json",
                 )
+        if response.status_code != 200:
+            raise RuntimeError(f"POST /agent/send/ retornou HTTP {response.status_code}")
+        try:
+            response_body = response.json()
+        except ValueError as exc:
+            raise RuntimeError("POST /agent/send/ não retornou JSON válido") from exc
+        if not isinstance(response_body, dict) or not response_body:
+            raise RuntimeError("POST /agent/send/ retornou JSON inválido")
         events = handler.events
         metrics = metrics_snapshot()
         payload = {
             "scenario": run_name,
-            "http": {"status_code": response.status_code, "keys": sorted(response.json())},
+            "http": {"status_code": response.status_code, "keys": sorted(response_body)},
             "events": events,
             "metrics": metrics,
         }
@@ -58,7 +69,7 @@ def capture(path, catalog_url, llm_responses, run_name):
 
 def main():
     django.setup()
-    output = Path("evidence/005-observabilidade-resiliencia")
+    output = ROOT_DIR / "evidence/005-observabilidade-resiliencia"
     output.mkdir(parents=True, exist_ok=True)
     capture(
         output / "normal-runtime.json",

@@ -175,7 +175,7 @@ Retorne APENAS o JSON, sem texto adicional.
 
 ---
 
-### Nó `extract_context`
+### Nó histórico `extract_context` (não conectado ao grafo atual)
 
 **Arquivo:** `chat/agent/nodes.py` (linha 122)
 

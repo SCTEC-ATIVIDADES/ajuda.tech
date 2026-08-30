@@ -5,7 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "ajuda-tech",
-        "responseMode": "lastNode",
+        "responseMode": "responseNode",
         "options": {}
       },
       "id": "webhook-v2",
@@ -18,13 +18,25 @@
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\nconst input = $json.body ?? $json;\nconst { event_id: eventId, message } = input;\nif (typeof eventId !== 'string' || !eventId.trim() || typeof message !== 'string' || !message.trim()) {\n  throw new Error('event_id and message are required');\n}\nconst payload = { event_id: eventId.trim(), message: message.trim() };\nconst secret = $env.AUTOMATION_WEBHOOK_SECRET || 'change-me';\nconst signature = crypto.createHmac('sha256', secret).update(JSON.stringify(payload)).digest('hex');\nreturn [{ json: { ...payload, signature } }];"
+        "jsCode": "const crypto = require('crypto');\nconst input = $json.body ?? $json;\nconst { event_id: eventId, message } = input;\nif (typeof eventId !== 'string' || !eventId.trim() || typeof message !== 'string' || !message.trim()) {\n  throw new Error('event_id and message are required');\n}\nconst payload = { event_id: eventId.trim(), message: message.trim() };\nconst secret = $env.AUTOMATION_WEBHOOK_SECRET;\nif (typeof secret !== 'string' || !secret) {\n  throw new Error('AUTOMATION_WEBHOOK_SECRET is required');\n}\nconst signature = crypto.createHmac('sha256', secret).update(JSON.stringify(payload)).digest('hex');\nreturn [{ json: { ...payload, signature } }];"
       },
       "id": "validate-sign",
       "name": "Validate and sign",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body ?? $json }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [980, 300]
     },
     {
       "parameters": {
@@ -51,7 +63,8 @@
   ],
   "connections": {
     "Webhook": {"main": [[{"node": "Validate and sign", "type": "main", "index": 0}]]},
-    "Validate and sign": {"main": [[{"node": "Send to Ajuda Tech", "type": "main", "index": 0}]]}
+    "Validate and sign": {"main": [[{"node": "Send to Ajuda Tech", "type": "main", "index": 0}]]},
+    "Send to Ajuda Tech": {"main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]}
   },
   "active": false,
   "settings": {"executionOrder": "v1"},

@@ -1,6 +1,7 @@
 import json
 import os
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlsplit
 from pathlib import Path
 
 
@@ -9,16 +10,25 @@ PRODUCTS_PATH = Path(os.environ.get("CATALOG_PATH", "/service/produtos.json"))
 
 class CatalogHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/products":
-            self._respond(200, {"produtos": json.loads(PRODUCTS_PATH.read_text(encoding="utf-8"))})
+        path = urlsplit(self.path).path
+        if path == "/healthz":
+            self._respond(200, {"ok": True})
             return
-        if self.path == "/products/empty":
+        if path == "/products":
+            try:
+                products = json.loads(PRODUCTS_PATH.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                self._respond(500, {"erro": "catálogo indisponível"})
+                return
+            self._respond(200, {"produtos": products})
+            return
+        if path == "/products/empty":
             self._respond(200, {"produtos": []})
             return
-        if self.path == "/products/malformed":
+        if path == "/products/malformed":
             self._respond(200, {"produtos": {}})
             return
-        if self.path == "/products/error":
+        if path == "/products/error":
             self._respond(503, {"erro": "serviço indisponível"})
             return
         self._respond(404, {"erro": "rota não encontrada"})
@@ -35,4 +45,6 @@ class CatalogHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
 
-HTTPServer(("0.0.0.0", int(os.environ.get("PORT", "8080"))), CatalogHandler).serve_forever()
+if __name__ == "__main__":
+    server = ThreadingHTTPServer(("0.0.0.0", int(os.environ.get("PORT", "8080"))), CatalogHandler)
+    server.serve_forever()

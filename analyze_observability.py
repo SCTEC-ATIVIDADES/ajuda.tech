@@ -1,3 +1,4 @@
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -6,6 +7,7 @@ from chat.observability import analyze_events
 
 ANOMALY_THRESHOLD_MS = 500
 MIN_TREND_POINTS = 2
+RISK_LEVELS = {"low": 0, "medium": 1, "high": 2}
 
 
 def analyze_log(events: list[dict]) -> dict:
@@ -47,21 +49,33 @@ def analyze_log(events: list[dict]) -> dict:
     }
 
 
-def main() -> None:
-    if len(sys.argv) not in (2, 3):
-        raise SystemExit("usage: python analyze_observability.py <events.json> [--fail-on-risk LEVEL]")
-    path = Path(sys.argv[1])
-    events = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(events, list) or not events:
-        raise SystemExit("events file must contain non-empty JSON array")
-    result = analyze_log(events)
+def _load_events(path: Path) -> list[dict]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"não foi possível ler JSON de eventos: {exc}") from exc
+    if not isinstance(value, list) or not value:
+        raise ValueError("events file must contain non-empty JSON array")
+    if any(not isinstance(event, dict) for event in value):
+        raise ValueError("events array must contain JSON objects")
+    return value
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("events", type=Path)
+    parser.add_argument("--fail-on-risk", choices=tuple(RISK_LEVELS), default=None)
+    args = parser.parse_args()
+    try:
+        result = analyze_log(_load_events(args.events))
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        print(json.dumps({"error": str(exc)}, ensure_ascii=False), file=sys.stderr)
+        return 2
     print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
-    if len(sys.argv) == 3:
-        if sys.argv[2] != "--fail-on-risk":
-            raise SystemExit("unknown option")
-        if result["risk"] in {"medium", "high"}:
-            raise SystemExit(1)
+    if args.fail_on_risk and RISK_LEVELS[result["risk"]] >= RISK_LEVELS[args.fail_on_risk]:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

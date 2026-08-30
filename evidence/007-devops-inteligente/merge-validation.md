@@ -6,4 +6,6 @@
 - Run de recuperação: https://github.com/SCTEC-ATIVIDADES/ajuda.tech/actions/runs/33294057307
 - Checks aprovados: `Testes automatizados (Python 3.12)`, `Testes frontend (Node.js)` e `Validar imagem Docker`.
 - Estado do PR após a recuperação: `CLEAN`.
-- Branch protection formal não pôde ser configurada: GitHub retornou HTTP 403 informando que o recurso exige GitHub Pro ou repositório público.
+- Branch protection configurada em `main` após o repositório tornar-se público.
+- Regras ativas: check obrigatório `Testes automatizados (Python 3.12)`, branch atualizada antes do merge, uma aprovação obrigatória, administradores incluídos e force-push/delete desabilitados.
+- Evidência operacional: PR permanece `BLOCKED` enquanto a aprovação obrigatória não existe, mesmo com todos os checks verdes.

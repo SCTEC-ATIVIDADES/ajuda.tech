@@ -1,33 +1,20 @@
 # Validação da análise IA — Spec 007
 
-## Entrada
+## Execução real
 
-- Arquivo: `chat/tests/observability_fixture.json`
-- Dados: eventos anonimizados de `request` e `catalog`.
-- Limite de anomalia: 500 ms.
-- Método de tendência: primeira observação versus última.
+- Data: `2026-08-30T04:44:01Z`
+- Modelo: `nvidia/nemotron-3-ultra-550b-a55b:free`
+- Provedor: OpenRouter
+- Entrada: `ai-data.json`, contendo apenas eventos anonimizados.
+- Prompt: `ai-prompt.txt`.
+- Script: `run_ai_observability.py`, executado dentro da imagem Docker.
 
-## Resposta IA registrada
+## Resultado
 
-A análise identificou duas anomalias em `catalog`: 700 ms e 900 ms. A tendência foi `+28,57%`, com incerteza alta por existirem somente duas observações. A IA classificou o risco como alto porque a latência aumentou e as duas medições excederam o limite.
+A IA identificou anomalias no estágio `catalog` em 700 ms e 900 ms, calculou tendência de 28,57%, classificou incerteza como alta por haver somente duas observações e classificou risco como alto devido à violação consistente do limite de 500 ms.
 
-## Validação determinística
+## Validação humana
 
-O analisador local confirmou as duas anomalias e a tendência de `+28,57%`. Pela regra determinística do projeto, anomalia sem falha explícita resulta em risco médio; portanto, a classificação alta da IA é conservadora, não contraditória.
+A análise determinística local confirmou as duas anomalias e a tendência de 28,57%. A classificação alta é conservadora; o resultado operacional do projeto permanece médio porque não há falha explícita, apenas latência acima do limite. O achado e a tendência foram aceitos; a diferença de risco foi registrada como decisão de governança.
 
-## Decisão humana
-
-- Achados de latência: aceitos.
-- Tendência e incerteza: aceitas.
-- Risco: ajustado para `médio` no resultado operacional, pois não há falha registrada.
-- A resposta IA fica preservada como opinião analítica; o gate determinístico continua sendo a fonte de bloqueio do CI.
-- Nenhuma credencial, prompt interno ou dado pessoal foi processado.
-
-## Rastreabilidade
-
-Prompt: `ai-prompt.txt`.
-Resposta: `ai-response.json`.
-Dados: `chat/tests/observability_fixture.json`.
-Regra executável: `analyze_observability.py`.
-Saída determinística: `observability-analysis.json`.
-Validação humana: `human-validation.md`.
+Nenhum segredo, prompt interno, dado pessoal ou payload externo foi salvo nos artefatos.

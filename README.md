@@ -12,7 +12,7 @@ Assistente conversacional Django que traduz necessidades de compra em recomenda�
 | Fan-out/fan-in de catálogo | DONE | [`chat/agent/nodes.py`](chat/agent/nodes.py) → [`test_agent_graph.py`](chat/tests/test_agent_graph.py) |
 | Tools read-only e whitelist | DONE | [`chat/agent/tools.py`](chat/agent/tools.py) → [`test_agent_tools.py`](chat/tests/test_agent_tools.py) |
 | Catálogo local validado | DONE | [`produtos.json`](produtos.json) → [`test_agent_tools.py`](chat/tests/test_agent_tools.py) |
-| Catálogo externo, retry e fallback | PARTIAL | [`chat/services.py`](chat/services.py) → [`test_catalog_integration.py`](chat/tests/test_catalog_integration.py); serviço real não comprovado |
+| Catálogo HTTP local, retry e fallback | DONE | [`chat/agent/tools.py`](chat/agent/tools.py) → [`test_catalog_integration.py`](chat/tests/test_catalog_integration.py); serviço Docker reproduzível |
 | Memória e nova conversa | DONE | [`chat/views.py`](chat/views.py) → [`test_acceptance.py`](chat/tests/test_acceptance.py) |
 | Limites de contexto e payload | DONE | [`chat/views.py`](chat/views.py) → [`test_limits.py`](chat/tests/test_limits.py) |
 | Segurança, CSRF e injection | DONE | [`ajuda_tech/settings.py`](ajuda_tech/settings.py) → [`test_views.py`](chat/tests/test_views.py) |
@@ -20,7 +20,7 @@ Assistente conversacional Django que traduz necessidades de compra em recomenda�
 | Frontend sanitizado | DONE em Docker; host PARTIAL | [`chatApp.js`](chat/static/chat/js/chatApp.js) → [`evidence/006-qa-com-ia/test-results.txt`](evidence/006-qa-com-ia/test-results.txt) |
 | CI e build Docker | DONE | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) → [`evidence/007-devops-inteligente/STATUS.md`](evidence/007-devops-inteligente/STATUS.md) |
 | Automação n8n local | DONE | [`n8n/workflows/ajuda-tech-webhook.json`](n8n/workflows/ajuda-tech-webhook.json) → [`evidence/008-low-code-nocode/STATUS.md`](evidence/008-low-code-nocode/STATUS.md) |
-| Vídeo, Kanban, permissões e publicação externa | BLOCKED | Sem evidência acessível neste repositório |
+| Vídeo, Kanban, permissões e publicação externa | BLOCKED | Entrega externa, não necessária para execução local |
 
 ## Arquitetura
 
@@ -118,7 +118,7 @@ npm run lint
 npm test
 ```
 
-CI também executa migração, cobertura mínima de 80%, análise offline de observabilidade e build Docker. Verificação Docker Spec 009: `ajuda-tech-spec009:latest`, lint PASS, Vitest 99 passed/9 arquivos, backend 152 passed e `manage.py check` sem issues. `check --deploy` em ambiente de teste gera warnings esperados; produção exige variáveis seguras. `node`, `npm`, `ruff` e `mypy` podem não existir no host, conforme [`evidence/009-readme-evidencias/verification.md`](evidence/009-readme-evidencias/verification.md).
+CI também executa migração, cobertura mínima de 80%, análise offline de observabilidade e build Docker. Verificação Docker Spec 009: lint PASS, Vitest 99 passed/9 arquivos, backend 190 passed e 1 skipped com `CATALOG_API_URL=` para testes unitários, e `manage.py check` sem issues. `check --deploy` em ambiente de teste gera warnings esperados; produção exige variáveis seguras. `node`, `npm`, `ruff` e `mypy` podem não existir no host, conforme [`evidence/009-readme-evidencias/verification.md`](evidence/009-readme-evidencias/verification.md).
 
 ## n8n local
 

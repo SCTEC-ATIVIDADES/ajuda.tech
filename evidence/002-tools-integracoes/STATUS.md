@@ -6,8 +6,8 @@ SPEC: 002-tools-integracoes
 ## Aceite verificado
 
 - `buscar_produtos` valida argumentos e catálogo antes de filtrar.
-- Catálogo externo configurado retorna `origem: externo`.
-- Falha externa usa catálogo local como fallback.
+- Catálogo HTTP local Docker configurado retorna `origem: externo` porque é externo ao processo app.
+- Falha do serviço HTTP usa catálogo local como fallback.
 - Falha local e fallback inválido retornam erro normalizado `catalog_unavailable`.
 - `comparar_produtos` retorna contrato JSON com `ok`, `codigo`, `origem` e `comparacao`.
 - `gerar_relatorio` rejeita nome e justificativa vazios.
@@ -17,7 +17,7 @@ SPEC: 002-tools-integracoes
 
 - `docker compose up -d --build`: PASS; serviços `app`, `catalog` e `n8n` iniciados.
 - `docker compose exec -T catalog ...`: PASS; `/products` respondeu HTTP 200 com 12 produtos e `/products/empty` respondeu HTTP 200 com lista vazia.
-- `docker compose exec -T -e CATALOG_API_URL=http://catalog:8080/products app ... buscar_produtos`: PASS; retorno com `origem: externo`.
+- `docker compose exec -T -e CATALOG_API_URL=http://catalog:8080/products app ... buscar_produtos`: PASS; retorno com `origem: externo` (serviço externo ao processo app, dentro da rede Docker).
 - `docker compose exec -T -e CATALOG_API_URL= app pytest -q`: PASS, 186 testes.
 - `docker compose exec -T -e CATALOG_API_URL= app python manage.py check`: PASS, 0 issues.
 - `docker compose exec -T -e CATALOG_API_URL= app python manage.py migrate --no-input`: PASS, sem migrações pendentes.
@@ -36,13 +36,13 @@ SPEC: 002-tools-integracoes
 
 ## Decisões
 
-- Integração externa usa `CATALOG_API_URL`, sem credenciais versionadas.
+- Integração HTTP usa `CATALOG_API_URL` para serviço local Docker, sem credenciais versionadas; API terceira é opcional e fora do escopo.
 - Testes simulam respostas para não depender de rede.
 - Falhas de integração não interrompem recomendação quando catálogo local está disponível.
 
 ## Pendências
 
-- API externa de terceiros não foi acionada; não é requisito do aceite local e permanece opcional.
+- API externa de terceiros: `N/A`; aceite usa serviço HTTP local Docker versionado.
 
 ## Próximo
 

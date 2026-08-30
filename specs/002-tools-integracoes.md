@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Tornar tools alcançáveis, validadas e demonstráveis, incluindo uma integração externa de leitura com fallback local.
+Tornar tools alcançáveis, validadas e demonstráveis, incluindo uma integração HTTP de leitura em serviço Docker separado com fallback local.
 
 ## Contexto mínimo atual
 
@@ -14,17 +14,17 @@ Alterar `chat/agent/tools.py`, `chat/agent/nodes.py`, `chat/agent/graph.py`, `ch
 
 ## Execução
 
-1. Escolher integração de baixo risco e leitura; preferir endpoint mock/reproduzível se credencial não existir.
+1. Escolher integração de baixo risco e leitura; usar endpoint Docker local reproduzível, sem credencial externa.
 2. Registrar decisão: finalidade, origem, limites e fallback.
 3. Criar contrato tipado, validação de entrada e erro normalizado.
 4. Integrar tool a nó alcançável do grafo e tornar `comparar_produtos` demonstrável.
-5. Validar schema do catálogo e resposta externa antes do prompt.
+5. Validar schema do catálogo e resposta do serviço HTTP local antes do prompt.
 6. Aplicar timeout/retry limitado somente onde já houver padrão.
 7. Nunca usar rede nos testes.
 
 ## Testes obrigatórios
 
-Sucesso, argumento inválido, catálogo vazio/malformado, timeout, 4xx, 5xx, resposta externa inválida e fallback.
+Sucesso, argumento inválido, catálogo vazio/malformado, timeout, 4xx, 5xx, resposta do serviço HTTP local inválida e fallback.
 
 ## Aceite
 
@@ -32,7 +32,7 @@ Tool recebe dados validados, retorna contrato previsível, falha sem quebrar rec
 
 ## Bloqueios
 
-Sem serviço ou credencial real, implementar adaptador mock controlado e marcar evidência externa como `BLOCKED`; não fingir integração real.
+Sem serviço externo, implementar adaptador HTTP local controlado e marcar API terceira como `N/A`; não fingir integração pública.
 
 ## Evidências
 

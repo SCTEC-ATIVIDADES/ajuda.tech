@@ -12,5 +12,5 @@ EVIDÊNCIAS: matriz de 15 critérios em `README.md`; revisão IA em `ai-review.m
 
 DECISÕES: documentação descreve código atual; estados usam `DONE`, `PARTIAL` e `BLOCKED`; execução externa não foi inventada; n8n é local/self-hosted; catálogo Compose é endpoint HTTP interno reproduzível, não serviço público de terceiro; esta revisão IA não executou modelo externo.
 
-PENDÊNCIAS: catálogo externo de terceiro, HTTPS público n8n, vídeo, Kanban, permissões e publicação externa permanecem BLOCKED ou não comprovados. Docs históricos fora da atualização mínima podem exigir revisão posterior.
+PENDÊNCIAS: vídeo, Kanban, permissões e publicação externa permanecem BLOCKED por dependerem da entrega humana. Catálogo terceiro e HTTPS público n8n são N/A: escopo usa catálogo HTTP local e n8n self-hosted em Docker. Docs históricos fora da atualização mínima podem exigir revisão posterior.
 PRÓXIMO AGENTE: specs/010-entrega-final.md

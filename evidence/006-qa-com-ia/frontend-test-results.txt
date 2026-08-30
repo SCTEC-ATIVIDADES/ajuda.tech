@@ -1,0 +1,21 @@
+
+> test
+> vitest run
+
+
+ RUN  v3.2.4 /app
+
+ ✓ chat/static/chat/js/chatTheme.test.js (6 tests) 5ms
+ ✓ chat/static/chat/js/chatState.test.js (6 tests) 7ms
+ ✓ chat/static/chat/js/chatState.edge.test.js (13 tests) 8ms
+ ✓ chat/static/chat/js/chatUi.edge.test.js (8 tests) 42ms
+ ✓ chat/static/chat/js/chatTheme.dom.test.js (22 tests) 38ms
+ ✓ chat/static/chat/js/chatUi.test.js (9 tests) 51ms
+ ✓ chat/static/chat/js/chatApi.test.js (2 tests) 114ms
+ ✓ chat/static/chat/js/chatApp.test.js (21 tests) 215ms
+ ✓ chat/static/chat/js/chatApi.errors.test.js (12 tests) 422ms
+
+ Test Files  9 passed (9)
+      Tests  99 passed (99)
+   Start at  04:10:11
+   Duration  1.32s (transform 231ms, setup 0ms, collect 575ms, tests 900ms, environment 4.75s, prepare 1.18s)

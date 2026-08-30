@@ -16,8 +16,9 @@
 | P1 | Produtos inválidos entrarem no prompt | Schema e filtros do catálogo | `chat/tests/test_agent_tools.py`, `test_catalog_integration.py` | DONE |
 | P1 | Roteamento LangGraph quebrar | Rotas, fan-out/fan-in e falha parcial | `chat/tests/test_agent_graph.py` | DONE |
 | P2 | Segredos ou raciocínio aparecerem na saída/log | Prompts, sanitização e filtros | `chat/tests/test_prompts.py`, `test_agent_nodes.py`, `test_observability.py` | DONE |
-| P2 | Frontend não ser validado no ambiente atual | Vitest completo | `npm test` | BLOCKED — `node`/`npm` indisponíveis |
-| P2 | Serviço externo real não ser comprovado | Execução com serviço/credencial real | `README.md:117-119` | BLOCKED — não permitido nesta suíte |
+| P2 | Frontend não ser validado no host atual | Vitest completo no host | `npm test` | BLOCKED — `node`/`npm` indisponíveis no host |
+| P2 | Frontend não ser validado em ambiente reproduzível | Vitest na imagem Docker | `evidence/006-qa-com-ia/test-results.txt` | DONE — 99 testes em 9 arquivos |
+| P2 | Serviço externo real não ser comprovado | Execução com serviço/credencial real | `README.md:11-12` | BLOCKED — não permitido nesta suíte |
 
 ## Verificação executada
 

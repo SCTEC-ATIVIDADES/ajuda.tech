@@ -118,8 +118,12 @@ def buscar_produtos(categoria: str, orcamento_max: float) -> str:
     orcamento_max = float(orcamento_max)
     if orcamento_max < 0 or not math.isfinite(orcamento_max):
         return _erro("Parâmetro 'orcamento_max' inválido ou ausente.")
-    with stage("tool.buscar_produtos"):
-        produtos, origem = _obter_catalogo()
+    try:
+        with stage("tool.buscar_produtos"):
+            produtos, origem = _obter_catalogo()
+    except (OSError, ValueError, TypeError) as exc:
+        emit_event("tool.buscar_produtos", "error", "error", error=exc)
+        return _erro("Catálogo indisponível.", "catalog_unavailable")
 
     resultados = [
         p for p in produtos
@@ -162,8 +166,12 @@ def comparar_produtos(produto_a_id: int, produto_b_id: int) -> str:
         return _erro("Parâmetro 'produto_b_id' inválido.")
     if produto_a_id == produto_b_id:
         return _erro("Produtos para comparação devem ser diferentes.")
-    with stage("tool.comparar_produtos"):
-        produtos, _origem = _obter_catalogo()
+    try:
+        with stage("tool.comparar_produtos"):
+            produtos, origem = _obter_catalogo()
+    except (OSError, ValueError, TypeError) as exc:
+        emit_event("tool.comparar_produtos", "error", "error", error=exc)
+        return _erro("Catálogo indisponível.", "catalog_unavailable")
     mapa = {p["id"]: p for p in produtos}
 
     a = mapa.get(produto_a_id)
@@ -199,7 +207,11 @@ def comparar_produtos(produto_a_id: int, produto_b_id: int) -> str:
         "diferenca_preco": round(abs(a["preco"] - b["preco"]), 2),
     }
 
-    return json.dumps(comparacao, ensure_ascii=False, indent=2)
+    return json.dumps(
+        {"ok": True, "codigo": "ok", "origem": origem, "comparacao": comparacao},
+        ensure_ascii=False,
+        indent=2,
+    )
 
 
 @tool
@@ -234,7 +246,10 @@ def gerar_relatorio(nome: str, preco: float, tipo: str, especificacoes: dict, ju
         or preco < 0
         or not isinstance(especificacoes, dict)
         or not isinstance(justificativa, str)
+        or not nome.strip()
+        or not justificativa.strip()
         or len(nome) > _MAX_TEXT
+        or len(justificativa) > _MAX_TEXT
         or len(especificacoes) > _MAX_SPECS
         or any(
             not isinstance(key, str)

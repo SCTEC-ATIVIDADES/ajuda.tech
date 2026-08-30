@@ -62,6 +62,19 @@ def test_external_catalog_invalid_response():
             ExternalCatalogClient(url="https://catalog.test").fetch_products()
 
 
+def test_configured_catalog_success_marks_external_origin():
+    from django.test import override_settings
+
+    with override_settings(CATALOG_API_URL="https://catalog.test"), patch(
+        "chat.agent.tools.fetch_external_catalog", return_value=PRODUTOS_FIXTURE
+    ):
+        payload = json.loads(buscar_produtos.invoke({"categoria": "notebook", "orcamento_max": 5000}))
+
+    assert payload["ok"] is True
+    assert payload["origem"] == "externo"
+    assert payload["produtos"] == PRODUTOS_FIXTURE
+
+
 def test_configured_catalog_falls_back_to_local():
     from django.test import override_settings
     from chat.agent.tools import _carregar_produtos

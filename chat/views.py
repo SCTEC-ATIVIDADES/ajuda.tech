@@ -201,6 +201,7 @@ class SendMessageView(View):
         if response := _rate_limit_response(request):
             return response
         if _is_injection(message):
+            emit_event("security", "prompt_injection", "blocked")
             return JsonResponse({"reply": _SAFE_INJECTION_RESPONSE})
         history = _history(request)
         history.append({"role": "user", "content": message})
@@ -323,6 +324,7 @@ class AgentSendMessageView(View):
         if response := _rate_limit_response(request):
             return response
         if _is_injection(message):
+            emit_event("security", "prompt_injection", "blocked")
             return JsonResponse({"reply": _SAFE_INJECTION_RESPONSE})
 
         history = _history(request)

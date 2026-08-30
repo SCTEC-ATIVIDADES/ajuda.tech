@@ -16,17 +16,20 @@
     }
   ],
   "durations_ms": {
-    "catalog": 900,
+    "catalog": 1600,
     "request": 10
   },
   "failures": [],
   "probable_cause": null,
   "risk": "medium",
+  "run_id": "run-normal",
+  "slowest_stage": "catalog",
   "stages": [
     "request",
     "catalog",
     "catalog"
   ],
+  "trace_id": "trace-normal",
   "trend": {
     "catalog": {
       "change_percent": 28.57,

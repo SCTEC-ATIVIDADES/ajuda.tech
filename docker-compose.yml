@@ -1,14 +1,25 @@
 services:
+  catalog:
+    build:
+      context: .
+      dockerfile: catalog.Dockerfile
+    expose:
+      - "8080"
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      catalog:
+        condition: service_started
     ports:
       - "8001:8000"
     env_file:
       - .env
     environment:
       ALLOWED_HOSTS: localhost,127.0.0.1,app
+      CATALOG_API_URL: http://catalog:8080/products
       AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-change-me}
     volumes:
       - .:/app

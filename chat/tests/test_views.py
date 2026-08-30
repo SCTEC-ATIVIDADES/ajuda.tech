@@ -71,6 +71,29 @@ class TestNewConversationView:
     def test_get_is_not_allowed(self, django_client):
         assert django_client.get(reverse("chat:new_conversation")).status_code == 405
 
+    def test_expired_session_starts_without_old_context(self, django_client):
+        session = django_client.session
+        session["chat_history"] = [{"role": "user", "content": "antiga"}]
+        session["user_needs"] = {"proposito": "estudos"}
+        session.set_expiry(-1)
+        session.save()
+
+        with patch("chat.views._get_agent_graph") as get_graph:
+            get_graph.return_value.invoke.return_value = {
+                "messages": [{"role": "assistant", "content": "nova conversa"}],
+                "user_needs": {},
+            }
+            response = django_client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": "começar"}),
+                content_type="application/json",
+            )
+
+        assert response.status_code == 200
+        initial_state = get_graph.return_value.invoke.call_args.args[0]
+        assert initial_state["messages"] == [{"role": "user", "content": "começar"}]
+        assert initial_state["user_needs"] == {}
+
 
 # ─── TestSendMessageView ──────────────────────────────────────────────────────
 
@@ -163,6 +186,14 @@ class TestSendMessageView:
         response = self._post(django_client, {"message": "x" * 4001})
         assert response.status_code == 413
 
+    def test_rejects_oversized_request_body(self, django_client):
+        response = django_client.post(
+            reverse("chat:send_message"),
+            data=json.dumps({"message": "ok", "padding": "x" * 8200}),
+            content_type="application/json",
+        )
+        assert response.status_code == 413
+
     @patch("chat.views._persist", return_value=False)
     @patch("chat.views.OpenRouterClient")
     def test_returns_500_when_session_persistence_fails(self, MockClient, _persist, django_client):
@@ -171,6 +202,21 @@ class TestSendMessageView:
         response = self._post(django_client, {"message": "teste"})
 
         assert response.status_code == 500
+
+    def test_persistence_failure_emits_structured_memory_event(self):
+        from types import SimpleNamespace
+        from chat.views import _persist
+
+        class BrokenSession:
+            def __setitem__(self, key, value):
+                raise RuntimeError("session unavailable")
+
+        with patch("chat.views.emit_event") as emit:
+            assert not _persist(SimpleNamespace(session=BrokenSession()), [], {})
+
+        emit.assert_called_once()
+        assert emit.call_args.args[:3] == ("memory", "persist", "error")
+        assert isinstance(emit.call_args.kwargs["error"], RuntimeError)
 
 
     @patch("chat.views.OpenRouterClient")

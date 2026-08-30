@@ -129,3 +129,18 @@ def test_gather_needs_preserves_existing_user_needs(mock_call_llm):
         "orcamento": 3000,
     }
     mock_call_llm.assert_called_once()
+
+
+@patch("chat.agent.nodes._call_llm", return_value='{"orcamento": 3000}')
+def test_gather_needs_consumes_recovered_context(mock_call_llm):
+    result = gather_needs(
+        {
+            "messages": [{"role": "user", "content": "Continuar"}],
+            "recovered_context": {"user_needs": {"proposito": "estudos"}},
+            "user_needs": {},
+        }
+    )
+
+    assert result["user_needs"] == {"proposito": "estudos", "orcamento": 3000}
+    prompt = mock_call_llm.call_args.args[0][0]["content"]
+    assert "estudos" in prompt

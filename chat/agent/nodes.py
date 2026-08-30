@@ -182,7 +182,10 @@ def gather_needs(state: AgentState) -> dict:
         for msg in state["messages"]
     ])
 
-    current_needs = _sanitize_needs(state.get("user_needs", {}))
+    recovered_context = state.get("recovered_context", {})
+    recovered_needs = recovered_context.get("user_needs", {}) if isinstance(recovered_context, dict) else {}
+    current_needs = _sanitize_needs(recovered_needs)
+    current_needs.update(_sanitize_needs(state.get("user_needs", {})))
 
     prompt = build_agent_needs_prompt(current_needs, history)
 

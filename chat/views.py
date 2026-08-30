@@ -156,7 +156,8 @@ def _persist(request, history, needs, *, run_id=None):
         request.session["thread_id"] = request.session.get("thread_id", str(uuid4()))
         request.session["run_id"] = run_id or str(uuid4())
         request.session.modified = True
-    except Exception:
+    except Exception as exc:
+        emit_event("memory", "persist", "error", error=exc)
         logger.error("Falha ao persistir memória da sessão", exc_info=True)
         return False
     return True
@@ -330,13 +331,16 @@ class AgentSendMessageView(View):
         try:
             messages = _llm_history(history)
 
+            thread_id = request.session.get("thread_id") or new_id()
+            request.session["thread_id"] = thread_id
+            recovered_needs = request.session.get("user_needs", {})
             initial_state = {
                 "messages": messages,
-                "thread_id": request.session.get("thread_id", ""),
+                "thread_id": thread_id,
                 "trace_id": new_id(),
                 "run_id": new_id(),
-                "recovered_context": {"user_needs": request.session.get("user_needs", {})},
-                "user_needs": request.session.get("user_needs", {}),
+                "recovered_context": {"user_needs": recovered_needs},
+                "user_needs": recovered_needs,
                 "products_found": [],
                 "stage": "",
                 "recommendation": "",

@@ -1,288 +1,175 @@
-# Ajuda Tech — Assistente Inteligente para Compra de Computadores
+# Ajuda Tech
 
-# Módulo 2 — Evolução do Projeto com LangGraph
+Assistente conversacional Django que traduz necessidades de compra em recomendações de computadores. Fluxo principal usa LangGraph, catálogo local validado e OpenRouter opcional.
 
-> Documento de análise e planejamento para discussão em grupo.
-> Criado em: 2026-07-16
+## Estado da entrega
 
-Trabalho módulo 2 com LangGraph
+| Critério | Estado | Implementação → teste/evidência |
+|---|---|---|
+| Grafo LangGraph compilado | DONE | [`chat/agent/graph.py`](chat/agent/graph.py) → [`test_agent_graph.py`](chat/tests/test_agent_graph.py) |
+| Estado tipado | DONE | [`chat/agent/state.py`](chat/agent/state.py) → [`test_agent_graph.py`](chat/tests/test_agent_graph.py) |
+| Roteamento condicional | DONE | [`chat/agent/graph.py`](chat/agent/graph.py) → [`test_agent_graph.py`](chat/tests/test_agent_graph.py) |
+| Fan-out/fan-in de catálogo | DONE | [`chat/agent/nodes.py`](chat/agent/nodes.py) → [`test_agent_graph.py`](chat/tests/test_agent_graph.py) |
+| Tools read-only e whitelist | DONE | [`chat/agent/tools.py`](chat/agent/tools.py) → [`test_agent_tools.py`](chat/tests/test_agent_tools.py) |
+| Catálogo local validado | DONE | [`produtos.json`](produtos.json) → [`test_agent_tools.py`](chat/tests/test_agent_tools.py) |
+| Catálogo externo, retry e fallback | PARTIAL | [`chat/services.py`](chat/services.py) → [`test_catalog_integration.py`](chat/tests/test_catalog_integration.py); serviço real não comprovado |
+| Memória e nova conversa | DONE | [`chat/views.py`](chat/views.py) → [`test_acceptance.py`](chat/tests/test_acceptance.py) |
+| Limites de contexto e payload | DONE | [`chat/views.py`](chat/views.py) → [`test_limits.py`](chat/tests/test_limits.py) |
+| Segurança, CSRF e injection | DONE | [`ajuda_tech/settings.py`](ajuda_tech/settings.py) → [`test_views.py`](chat/tests/test_views.py) |
+| Observabilidade e resiliência | DONE | [`chat/observability.py`](chat/observability.py) → [`test_observability.py`](chat/tests/test_observability.py) |
+| Frontend sanitizado | DONE em Docker; host PARTIAL | [`chatApp.js`](chat/static/chat/js/chatApp.js) → [`evidence/006-qa-com-ia/test-results.txt`](evidence/006-qa-com-ia/test-results.txt) |
+| CI e build Docker | DONE | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) → [`evidence/007-devops-inteligente/STATUS.md`](evidence/007-devops-inteligente/STATUS.md) |
+| Automação n8n local | DONE | [`n8n/workflows/ajuda-tech-webhook.json`](n8n/workflows/ajuda-tech-webhook.json) → [`evidence/008-low-code-nocode/STATUS.md`](evidence/008-low-code-nocode/STATUS.md) |
+| Vídeo, Kanban, permissões e publicação externa | BLOCKED | Sem evidência acessível neste repositório |
 
-Grupo Dupla
-Gisele Tavares
-Wagner Sousa
+## Arquitetura
 
-Plano:
-[docs/MODULO2_LANGGRAPH_EVOLUCAO.md](docs/MODULO2_LANGGRAPH_EVOLUCAO.md)
-
-Slides:
-https://gamma.app/docs/Ajuda-Tech-Problema-e-Solucao-r9t5jfg1cwkiv0e
-
-Repositório:
-https://github.com/SCTECH-ATIVIDADES/ajuda.tech
-
-
-## Integrantes
-
-- Wagner Sousa
-- Rafael Santos
-- Rafael
-- Gisele Tavares
-- Luan Rodrigues
-
-## Links
-
-- [Apresentação (Gamma)](https://gamma.app/docs/Untitled-gqu51wdlkr5cbnw?mode=doc)
-- [Repositório](https://github.com/SCTECH-ATIVIDADES/ajuda.tech)
-- [Vídeo explicativo](https://www.youtube.com/watch?v=z0OYyr210F8)
-
----
-
-## 1. Problema
-
-Muitas pessoas têm dificuldade em escolher um computador porque não entendem as especificações técnicas. Elas precisam de ajuda para traduzir suas necessidades reais (estudar, trabalhar, jogar) em uma compra adequada ao seu orçamento.
-
-## 2. Objetivo do Agente
-
-O **Herbert** é um agente conversacional que conduz o usuário em uma coleta guiada de informações e recomenda o computador ideal (notebook ou desktop) com base em um catálogo de produtos reais.
-
-- **Entrada:** mensagem do usuário descrevendo o que precisa
-- **Saída:** recomendação personalizada de produto do catálogo + relatório em Markdown
-
-## 3. Fluxo com LangGraph
-
-O agente usa `StateGraph` com estado tipado, roteamento condicional, fan-out para consultas independentes ao catálogo e fan-in dos resultados:
-
-```
-START → classify_msg → [greet | gather_needs | prepare_catalog]
-                         ↓          ↓
-                       END       respond
-                                      ↑
-prepare_catalog → Send → catalog_worker → consolidate_catalog
-                                      ↓
-                                 recommend → report → respond → END
+```text
+POST /agent/send/
+  -> valida JSON, CSRF, injection e rate limit
+  -> sessão Django: histórico, necessidades, thread_id, run_id
+  -> classify_msg
+     -> greet
+     -> gather_needs -> respond (dados insuficientes)
+     -> prepare_catalog -> Send(notebook, desktop)
+        -> catalog_worker -> consolidate_catalog
+        -> compare_catalog_products -> recommend -> report -> respond
 ```
 
-`gather_needs` segue para `prepare_catalog` quando propósito e orçamento existem; caso contrário, segue para `respond`. `extract_context` existe em `nodes.py`, mas não faz parte do grafo atual.
+`AgentState` é um `TypedDict`. Reducers agregam mensagens, resultados de catálogo e erros. Falha de um ramo vira resultado parcial; não interrompe outros ramos. O contexto recuperado da sessão é incorporado ao estado antes da coleta de necessidades.
 
-### Nós do grafo
+Código principal:
 
-| Nó | Função |
-|----|--------|
-| `classify_msg` | Classifica a intenção do usuário |
-| `greet` | Responde cumprimentos |
-| `gather_needs` | Extrai e preserva necessidades do usuário |
-| `prepare_catalog` | Cria trabalhos para categorias notebook e desktop |
-| `catalog_worker` | Consulta uma categoria do catálogo por ramo |
-| `consolidate_catalog` | Consolida produtos e registra falhas parciais |
-| `recommend` | Gera recomendação com catálogo consolidado |
-| `report` | Gera relatório estruturado em Markdown |
-| `respond` | Monta resposta final ou pergunta por dados faltantes |
+- [`chat/agent/state.py`](chat/agent/state.py): estado e tipos.
+- [`chat/agent/graph.py`](chat/agent/graph.py): grafo e roteamento.
+- [`chat/agent/nodes.py`](chat/agent/nodes.py): nós.
+- [`chat/agent/tools.py`](chat/agent/tools.py): `buscar_produtos`, `comparar_produtos`, `gerar_relatorio`.
+- [`chat/services.py`](chat/services.py): único ponto de contato com OpenRouter.
+- [`chat/prompts.py`](chat/prompts.py): prompts internos, não exibidos ao usuário.
+- [`chat/views.py`](chat/views.py): endpoints e sessão.
 
-### Estado compartilhado
+## Endpoints
 
-```python
-class AgentState(TypedDict, total=False):
-    messages: Annotated[list, add_messages]
-    user_needs: dict[str, object]
-    products_found: list[Product]
-    catalog_jobs: list[CatalogJob]
-    branch_job: CatalogJob
-    catalog_results: Annotated[list[CatalogBranchResult], add]
-    errors: Annotated[list[str], add]
-    stage: str
-    recommendation: str
-    report: str
-    classified_intent: str
-```
+| Método | Rota | Função |
+|---|---|---|
+| GET | `/` | Interface do chat |
+| POST | `/agent/send/` | Fluxo principal LangGraph |
+| POST | `/send/` | Fluxo legado direto com OpenRouter |
+| POST | `/recommend/` | Fluxo legado de extração |
+| POST | `/new/` | Limpa sessão e inicia conversa |
+| POST | `/automation/webhook/` | Webhook HMAC para n8n |
 
-`catalog_results` e `errors` usam reducers para agregar resultados dos ramos. Falha em um `catalog_worker` vira resultado de erro e não impede consolidação dos demais ramos.
+## Catálogo, modelo e contexto
 
-## 4. Ferramentas Integradas
+- Catálogo padrão: [`produtos.json`](produtos.json), 12 produtos.
+- `CATALOG_API_URL` aponta para serviço HTTP de leitura; Compose usa o mock reproduzível `http://catalog:8080/products`. A resposta passa validação de schema e, em falha, usa catálogo local. `buscar_produtos` retorna JSON com `ok`, `origem`, `codigo`, `mensagem` e `produtos`; erros usam `catalog_unavailable` ou `invalid_argument`.
+- `comparar_produtos` retorna JSON com `ok`, `codigo`, `origem` e `comparacao`; `gerar_relatorio` valida textos, tipo, preço e especificações antes de gerar Markdown.
+- Integração HTTP é somente leitura, com timeout de `CATALOG_TIMEOUT` e até dois retries para timeout/conexão/5xx; o serviço local reproduzível não exige credencial. API externa de terceiros continua opcional e não é declarada como validada.
+- OpenRouter usa `LLM_API_KEY`, `LLM_MODEL` e `LLM_TIMEOUT`. `LLM_PROVIDER` é mantido por compatibilidade, mas não altera a chamada atual.
+- Histórico fica em cookie de sessão Django por até 24 horas; backend retém até 50 entradas e envia até 20 mensagens ao LLM. Mensagem máxima: 4.000 caracteres. Rate limit: 10 requisições por sessão em 60 segundos.
+- `POST /new/` faz limpeza explícita. Recarregar página mantém sessão no backend, mas frontend não busca histórico antigo para renderização. Fechar/expirar sessão pode perder contexto.
+- Não há banco de conversas nem checkpointer externo. SQLite serve às sessões e testes.
 
-O agente utiliza **3 ferramentas** (tools) registradas via LangChain `@tool`:
+## Segurança
 
-| Tool | Descrição |
-|------|-----------|
-| `buscar_produtos` | Lê o catálogo `produtos.json` e filtra por categoria e orçamento máximo |
-| `comparar_produtos` | Compara especificações de dois produtos pelo ID |
-| `gerar_relatorio` | Gera relatório em Markdown com nome, preço, specs e justificativa |
+- CSRF global; frontend envia `X-CSRFToken`.
+- Webhook usa HMAC-SHA256, `event_id`, deduplicação e validação de payload.
+- Credenciais vêm de ambiente; `.env` não deve ser versionado. `.env.example` contém placeholders.
+- Produção exige `DEBUG=False`, chave Django não padrão, `SECRET_KEY` e `LLM_API_KEY`.
+- Ferramentas são whitelist read-only. Catálogo e Markdown são escapados; frontend usa DOMPurify.
+- Entradas suspeitas são bloqueadas antes do LLM; dados do usuário são delimitados nos prompts.
 
-`buscar_produtos` é chamada pelos ramos `catalog_worker`; `comparar_produtos` é chamada por `compare_catalog_products`; `gerar_relatorio` é chamada por `report`.
+## Instalação local
 
-### Integração externa de leitura
-
-Catálogo externo opcional é configurado por `CATALOG_API_URL` e consultado via `GET`, com timeout de 5s e até 2 retries para timeout, conexão e HTTP 5xx. Respostas aceitas são lista JSON ou objeto com `produtos` lista. Cada produto passa validação de schema antes de entrar em qualquer prompt.
-
-Sem URL/credencial/serviço real, evidência externa permanece **BLOCKED**; fluxo usa catálogo `produtos.json`. Se integração configurada falhar, usa fallback local e marca `origem: local_fallback`. Integração é somente leitura, sem ações destrutivas.
-
-Variáveis opcionais: `CATALOG_API_URL`, `CATALOG_TIMEOUT`.
-
-## 5. Memória e Contexto
-
-- Histórico e necessidades estruturadas ficam na sessão Django por até 24 horas; recarregar página preserva conversa.
-- Histórico retém no máximo 50 entradas; cada chamada LLM recebe apenas últimas 20 mensagens.
-- Mensagem excedendo 4.000 caracteres é rejeitada.
-- Nova conversa usa `POST /new/` e limpa sessão explicitamente.
-- `thread_id`, `run_id` e `recovered_context` ficam separados no estado do agente; não há checkpointer externo.
-- Sessão expirada inicia contexto vazio. Não são armazenados segredos ou dados pessoais sensíveis.
-- Falha de persistência é registrada e retorna erro, sem confirmar memória como salva.
-- O LangGraph usa `Annotated` e reducers para acumular mensagens, resultados e erros.
-
-## 6. Segurança
-
-- Chaves de API ficam apenas em `.env` (excluído do Git via `.gitignore`)
-- `.env.example` contém somente valores locais/documentais; chaves reais não são versionadas
-- Nenhuma credencial versionada no repositório
-- Proteção CSRF em todos os formulários Django
-- Não são coletados dados pessoais sensíveis
-- Produção exige `DEBUG=False`, `SECRET_KEY` não padrão e `LLM_API_KEY`; cookies, SSL redirect, HSTS e nosniff ficam protegidos.
-- Endpoints de mensagem aceitam JSON objeto com `message` não vazio até 4.000 caracteres; limite local: 10 requisições por sessão a cada 60 segundos, rejeitadas antes da IA.
-- Agente usa somente ferramentas de leitura (`buscar_produtos`, `comparar_produtos`, `gerar_relatorio`); não executa ações destrutivas nem escolhe ferramentas dinamicamente.
-
-### Matriz de ameaças — Spec 004
-
-| Ameaça | Controle | Teste/evidência | Status |
-|---|---|---|---|
-| Prompt injection/vazamento | Dados não confiáveis delimitados; recusa local sem prompt, segredo ou raciocínio | `chat/tests/test_views.py`, `test_prompts.py`, `test_agent_nodes.py` | DONE |
-| Payload grande/malformado | JSON objeto, tipos, conteúdo e limites de request/mensagem | `chat/tests/test_views.py` | DONE |
-| Abuso/rate limit | 10 mensagens/minuto por sessão antes de LLM/grafo; resposta 429 | `chat/tests/test_limits.py` | DONE |
-| Segredos/configuração | Ambiente; produção falha com segredo/chave ausente ou padrão | `ajuda_tech/settings.py`, `python3 manage.py check --deploy` | DONE |
-| Tool indevida/catálogo hostil | Whitelist read-only, schema, tipos, limites e escaping | `chat/tests/test_agent_tools.py`, `test_catalog_integration.py` | DONE |
-| CSRF | `CsrfViewMiddleware`, token de template e AJAX | `chat/tests/test_views.py` | DONE |
-
-Autonomia fica limitada pelo grafo fixo: entrada do usuário não escolhe ferramentas, URLs ou ações; recomendação depende do fluxo e catálogo configurados.
-
-## 7. Matriz de rastreabilidade
-
-| Critério | Implementação | Teste/evidência | Status |
-|---|---|---|---|
-| Agente conversacional | `chat/agent/graph.py` | `chat/tests/test_agent_graph.py` | DONE |
-| Estado tipado | `chat/agent/state.py` | `chat/tests/test_agent_graph.py` | DONE |
-| Roteamento condicional | `chat/agent/graph.py` | `test_agent_graph.py` | DONE |
-| Fan-out/fan-in | `chat/agent/graph.py` | `test_agent_graph.py` | DONE |
-| Catálogo local | `produtos.json`, `tools.py` | `test_agent_tools.py` | DONE |
-| Catálogo externo opcional | `chat/agent/tools.py` | `test_catalog_integration.py` | DONE |
-| Memória de sessão | `chat/views.py` | `test_acceptance.py`, `test_limits.py` | DONE |
-| Limites de entrada | `chat/views.py` | `test_views.py`, `test_limits.py` | DONE |
-| Proteção contra injection | `chat/views.py`, `prompts.py` | `test_views.py`, `test_prompts.py` | DONE |
-| CSRF | Django middleware/endpoints | `test_views.py` | DONE |
-| Resiliência do LLM | `chat/services.py` | `test_services.py` | DONE |
-| Observabilidade | `chat/observability.py` | `test_observability.py` | DONE |
-| Contrato frontend | `chatApi.js`, `chatApp.js` | `chatApi*.test.js`, `chatApp.test.js` | DONE |
-| Cobertura automatizada | `.github/workflows/ci.yml` | `evidence/006-qa-com-ia/risk-matrix.md` | DONE |
-| Serviço externo real e vídeo | fora do repositório | `evidence/006-qa-com-ia/risk-matrix.md` | BLOCKED |
-
-## 8. Como Executar
-
-### Pré-requisitos
-- Python 3.12+
-- Chave de API do [OpenRouter](https://openrouter.ai)
-
-### Instalação
+Requisitos: Python 3.12+, Node.js/npm para testes frontend, Docker opcional.
 
 ```bash
-git clone https://github.com/SCTECH-ATIVIDADES/ajuda.tech.git
+git clone https://github.com/SCTEC-ATIVIDADES/ajuda.tech.git
 cd ajuda.tech
 python -m venv venv
 source venv/bin/activate
 python -m pip install -r requirements.txt
-cp .env.example .env   # edite com sua LLM_API_KEY
+cp .env.example .env
+# edite SECRET_KEY e LLM_API_KEY
 python manage.py migrate
 python manage.py runserver
 ```
 
-Acesse: `http://localhost:8000`
+Acesse `http://localhost:8000`. Sem `LLM_API_KEY`, use testes ou configure uma chave antes de enviar mensagens ao agente.
 
-### Com Docker
+## Docker
+
+Crie `.env` conforme instalação local antes de iniciar Compose.
 
 ```bash
 docker compose up --build
 ```
 
-Acesse: `http://localhost:8001`
+App fica em `http://localhost:8001`; n8n fica em `http://localhost:5678`.
 
-### Testes
-
-```bash
-pytest              # backend
-npm test            # frontend
-```
-
-### Automação local com n8n
+## Testes e checks
 
 ```bash
-cp .env.example .env
-openssl rand -hex 32
-# defina AUTOMATION_WEBHOOK_SECRET e N8N_ENCRYPTION_KEY com valores gerados
-
-docker compose up --build -d
+python -m pytest
+python manage.py check
+python manage.py check --deploy
+npm ci
+npm run lint
+npm test
 ```
 
-Abra `http://localhost:5678`, importe `n8n/workflows/ajuda-tech-webhook.json`, defina workflow como ativo e use URL de produção `/webhook/ajuda-tech`. n8n valida `event_id`/`message`, assina payload HMAC-SHA256 e chama `http://app:8000/automation/webhook/`; app rejeita assinatura inválida e duplicatas. Saída visível: resposta JSON da execução n8n. Workflow local não publica HTTPS.
+CI também executa migração, cobertura mínima de 80%, análise offline de observabilidade e build Docker. Verificação Docker Spec 009: `ajuda-tech-spec009:latest`, lint PASS, Vitest 99 passed/9 arquivos, backend 152 passed e `manage.py check` sem issues. `check --deploy` em ambiente de teste gera warnings esperados; produção exige variáveis seguras. `node`, `npm`, `ruff` e `mypy` podem não existir no host, conforme [`evidence/009-readme-evidencias/verification.md`](evidence/009-readme-evidencias/verification.md).
 
-## 9. Exemplo de Entrada e Saída
+## n8n local
 
-Veja [docs/exemplos_execucao.md](docs/exemplos_execucao.md) para exemplos detalhados de conversas com o agente.
+Configure `AUTOMATION_WEBHOOK_SECRET` e `N8N_ENCRYPTION_KEY` no `.env` e execute `docker compose up --build`. O serviço `n8n-init` importa o workflow versionado e o ativa automaticamente na primeira inicialização do volume; execuções seguintes reutilizam o volume. O n8n assina payload HMAC e chama `http://app:8000/automation/webhook/`. Use `http://localhost:5678/webhook/ajuda-tech`; resposta JSON é observável. Execução local não é URL HTTPS pública.
 
-**Resumo rápido:**
+## Evidências
 
-```
-Usuário: oi
-Herbert: Olá! Me chamo Herbert e vou te ajudar a encontrar o computador
-perfeito para você. Me conta: para que você pretende usar o computador?
+- Spec 006: [`evidence/006-qa-com-ia/`](evidence/006-qa-com-ia/): revisão IA, decisão humana, matriz de riscos e resultados Docker.
+- Spec 007: [`evidence/007-devops-inteligente/`](evidence/007-devops-inteligente/): CI, fixture, análise determinística e validação humana.
+- Spec 008: [`evidence/008-low-code-nocode/`](evidence/008-low-code-nocode/): workflow, payload sanitizado e histórico local.
+- Spec 009: [`evidence/009-readme-evidencias/`](evidence/009-readme-evidencias/): verificação documental e revisão.
 
-Usuário: quero um notebook pra estudar
-Herbert: Ótimo! E qual é o seu orçamento aproximado?
+## Limitações e decisões
 
-Usuário: até 3000 reais
-Herbert: Com R$ 3.000 você consegue um notebook ótimo para estudos!
-O Samsung Book i3 é uma ótima opção — processador Intel Core i3,
-8 GB de memória e tela de 15.6". Perfeito para navegar, usar o
-Office e assistir aulas. Ele custa R$ 2.799,00 e vai atender
-muito bem o que você precisa.
-```
+- Catálogo mock HTTP local usa os mesmos dados versionados; serviço externo de terceiros não foi acionado.
+- Modelos gratuitos podem variar, falhar ou emitir marcadores de raciocínio; serviço filtra esses marcadores.
+- Sem login, persistência entre sessões, comparação visual garantida, lazy load ou promessa de tempo de resposta.
+- n8n é self-hosted e validado apenas localmente.
+- LangGraph foi escolhido por tornar roteamento e fan-out/fan-in explícitos; sessão Django evita criar persistência adicional para MVP.
 
-![alt text](image.png)
+## Estrutura
 
-## 10. Decisões Tomadas
-
-- **LangGraph sobre abordagem procedural:** permite visualizar o fluxo do agente como um grafo
-- **OpenRouter como provedor:** permite testar diferentes modelos LLM sem trocar o código
-- **Catálogo JSON local:** produto simples, sem necessidade de banco de dados para o catálogo
-- **Sessão Django para memória:** mantém dados apenas durante a sessão do usuário
-- **Fan-out/fan-in do catálogo:** consulta categorias em ramos independentes e preserva resultados parciais
-
-## 11. Limitações
-
-- **Limite de requests:** a conta free tier do OpenRouter permite ~50 requests/dia
-- **Qualidade do modelo:** modelos gratuitos podem expor raciocínio interno (chain-of-thought), que é filtrado pelo código
-- **Simplicidade do catálogo:** apenas 12 produtos; em produção seria necessário um banco de dados
-- **Sem persistência entre sessões:** ao fechar o navegador, o histórico é perdido
-- **Safety filters:** alguns modelos retornam respostas bloqueadas por filtros de segurança; o código trata esses casos
-
-## 12. Estrutura do Projeto
-
-```shell
+```text
 ajuda.tech/
-├── ajuda_tech/          # Configurações Django
+├── ajuda_tech/                 # settings, URLs e WSGI
 ├── chat/
-│   ├── agent/
-│   │   ├── graph.py     # Grafo LangGraph (StateGraph + nós + edges)
-│   │   ├── nodes.py     # Funções de cada nó do grafo
-│   │   ├── state.py     # Estado tipado (TypedDict)
-│   │   └── tools.py     # Ferramentas do catálogo e relatório
-│   ├── static/chat/     # Frontend (JS modular + CSS)
-│   ├── templates/chat/  # Template Django
-│   ├── tests/           # Testes backend (pytest)
-│   ├── prompts.py       # System Prompts do agente
-│   ├── services.py      # Cliente OpenRouter
-│   ├── views.py         # Endpoints Django
-│   └── urls.py           # Rotas
-├── core/                # Landing page
-├── docs/                # Documentação do projeto
-├── produtos.json        # Catálogo de produtos (12 itens)
+│   ├── agent/                  # grafo, nós, estado e tools
+│   ├── static/chat/            # frontend JS/CSS
+│   ├── templates/chat/         # template Django
+│   ├── tests/                  # testes backend
+│   ├── prompts.py              # prompts internos
+│   ├── services.py             # OpenRouter
+│   ├── views.py                # endpoints
+│   └── urls.py                 # rotas
+├── core/                       # app auxiliar não incluída nas rotas atuais
+├── docs/                       # documentação
+├── evidence/                   # evidências sanitizadas
+├── n8n/workflows/              # exportação n8n
+├── produtos.json
 ├── Dockerfile
 ├── docker-compose.yml
-├── .env.example
-└── README.md
+├── requirements.txt
+├── package.json
+└── manage.py
 ```
+
+## Referências
+
+- [Estrutura](docs/ESTRUTURA_PROJETO.md)
+- [Fluxo do usuário](docs/FLUXO_USUARIO.md)
+- [Diagrama de sequência](docs/DIAGRAMA_SEQUENCIA.md)
+- [PRD](docs/PRD.md)
+- [User stories](docs/USER_STORIES.md)
+- [Specs e contratos](specs/)

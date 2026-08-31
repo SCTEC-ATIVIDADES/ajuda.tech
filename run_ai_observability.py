@@ -15,6 +15,9 @@ def main():
     parser.add_argument("--data", type=Path, default=ROOT_DIR / "evidence/007-devops-inteligente/ai-data.json")
     parser.add_argument("--output", type=Path, default=ROOT_DIR / "evidence/007-devops-inteligente/ai-response.json")
     args = parser.parse_args()
+    if os.getenv("RUN_REAL_OPENROUTER") != "1":
+        print("Defina RUN_REAL_OPENROUTER=1 para executar chamada real.", file=sys.stderr)
+        return 2
     try:
         if os.getenv("LLM_ANALYSIS_MODEL") and not os.getenv("LLM_MODEL"):
             os.environ["LLM_MODEL"] = os.environ["LLM_ANALYSIS_MODEL"]

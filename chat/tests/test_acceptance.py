@@ -155,7 +155,6 @@ def test_agent_rate_limit_skips_graph(client):
 
 
 @pytest.mark.django_db
-@pytest.mark.django_db
 def test_production_cookie_settings_are_secure(settings):
     settings.DEBUG = False
     settings.SESSION_COOKIE_SECURE = True

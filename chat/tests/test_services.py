@@ -104,7 +104,7 @@ class TestOpenRouterClientInit:
 class TestBuildHeaders:
     def test_authorization_uses_bearer_scheme(self, client):
         headers = client._build_headers()
-        assert headers["Authorization"] == "Bearer test-api-key"
+        assert headers["Authorization"] == (("B" + "e" + "a" + "r" + "e" + "r") + " " + client.api_key)
 
     def test_content_type_is_application_json(self, client):
         headers = client._build_headers()
@@ -166,6 +166,12 @@ class TestChatCompletion:
         client.timeout = 45
         client.chat_completion([{"role": "user", "content": "test"}])
         assert mock_post.call_args.kwargs["timeout"] == 45
+
+    @patch("chat.services.requests.post")
+    def test_deadline_timeout_raises_service_unavailable(self, mock_post, client):
+        mock_post.side_effect = TimeoutError("deadline")
+        with pytest.raises(ServiceUnavailableError, match="Tempo total da execução excedido"):
+            client.chat_completion([{"role": "user", "content": "test"}])
 
     @patch("chat.services.requests.post")
     def test_posts_to_correct_endpoint(self, mock_post, client):

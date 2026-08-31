@@ -18,4 +18,4 @@
 
 O endpoint real foi exercitado dentro da rede Docker. O cenário normal chegou à integração com o OpenRouter, mas a dependência LLM retornou indisponibilidade; por isso não houve resposta `200` nem saída de recomendação. Isso é evidência válida de falha rastreável, não de sucesso normal do workflow n8n.
 
-O workflow exportado permanece disponível em `n8n/workflows/ajuda-tech-webhook.json` e declara `active: false`; ativação observada no runtime local está documentada separadamente em `n8n-execution.md`. URL pública HTTPS e ativação externa continuam fora do escopo do plano local.
+O workflow exportado permanece disponível em `n8n/workflows/ajuda-tech-webhook.json` e declara `active: true`; a ativação observada no runtime local está documentada separadamente em `n8n-execution.md`. URL pública HTTPS e ativação externa continuam fora do escopo do plano local.

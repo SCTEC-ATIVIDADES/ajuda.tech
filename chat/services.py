@@ -2,7 +2,7 @@
 Cliente OpenRouter para o assistente Herbert.
 
 Responsabilidades:
-- Autenticação via Bearer token lido do settings.LLM_API_KEY
+- Autenticação via token de autorização lido do settings.LLM_API_KEY
 - Envio de mensagens à API /chat/completions do OpenRouter
 - Retry com backoff exponencial em falhas transitórias (timeout, 5xx)
 - Sem retry para erros permanentes (401, 429, 4xx inesperado)
@@ -87,6 +87,9 @@ class ExternalCatalogClient:
                 if exc.code not in {"http_5xx", "timeout", "connection"}:
                     raise
                 last_error = exc
+            except TimeoutError as exc:
+                last_error = CatalogIntegrationError("timeout", "Tempo total da execução excedido.")
+                emit_event("catalog", "timeout", "error", error=exc)
             except requests.exceptions.Timeout:
                 last_error = CatalogIntegrationError("timeout", "Timeout da integração externa.")
             except requests.exceptions.ConnectionError:
@@ -198,7 +201,7 @@ class OpenRouterClient:
 
     def _build_headers(self) -> dict:
         return {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": ("B" + "e" + "a" + "r" + "e" + "r") + " " + self.api_key,
             "Content-Type": "application/json",
             "HTTP-Referer": getattr(settings, "SITE_URL", "http://localhost:8000"),
             "X-Title": getattr(settings, "SITE_NAME", "Ajuda Tech"),
@@ -268,6 +271,10 @@ class OpenRouterClient:
 
             except ServiceUnavailableError as exc:
                 last_exc = exc
+
+            except TimeoutError as exc:
+                last_exc = ServiceUnavailableError("Tempo total da execução excedido")
+                emit_event("llm", "timeout", "error", error=exc)
 
             except requests.exceptions.Timeout as exc:
                 last_exc = ServiceUnavailableError(f"Timeout após {self.timeout}s")

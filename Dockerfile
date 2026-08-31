@@ -12,10 +12,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt package.json package-lock.json ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && npm ci --ignore-scripts
 
 COPY . .
+RUN npm run lint && npm test
 
 EXPOSE 8000
 

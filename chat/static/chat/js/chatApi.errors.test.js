@@ -16,7 +16,7 @@ import { postChat, postChatMock, CHAT_ENDPOINT } from './chatApi.js';
 
 describe('CHAT_ENDPOINT', () => {
   it('aponta para o endpoint correto do backend', () => {
-    expect(CHAT_ENDPOINT).toBe('/agent/send/');
+    expect(CHAT_ENDPOINT).toBe('/automation/send/');
   });
 });
 
@@ -27,6 +27,19 @@ describe('postChat — erros HTTP', () => {
     const fetchFn = vi.fn().mockResolvedValue({ ok: false, status: 400 });
 
     await expect(postChat('oi', 'session-1', { fetchFn })).rejects.toThrow();
+  });
+
+  it('preserva erro e mensagem que pode ser reenviada', async () => {
+    const fetchFn = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ error: 'Serviço indisponível', failed_message: 'Quero um notebook' }),
+    });
+
+    await expect(postChat('Quero um notebook', null, { fetchFn })).rejects.toMatchObject({
+      message: 'Serviço indisponível',
+      failedMessage: 'Quero um notebook',
+    });
   });
 
   it('lança erro quando response.ok é false (ex: HTTP 429)', async () => {
@@ -66,7 +79,7 @@ describe('postChat — corpo da requisição', () => {
   it('serializa session_id no corpo mesmo quando null', async () => {
     const fetchFn = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ message: 'ok' }),
+      json: async () => ({ reply: 'ok' }),
     });
 
     await postChat('oi', null, { fetchFn });
@@ -78,7 +91,7 @@ describe('postChat — corpo da requisição', () => {
   it('serializa message e session_id no corpo', async () => {
     const fetchFn = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ message: 'ok' }),
+      json: async () => ({ reply: 'ok' }),
     });
 
     await postChat('texto do usuário', 'abc-123', { fetchFn });
@@ -92,20 +105,20 @@ describe('postChat — corpo da requisição', () => {
 // ─── postChatMock ─────────────────────────────────────────────────────────────
 
 describe('postChatMock', () => {
-  it('retorna objeto com chave message', async () => {
+  it('retorna objeto com chave reply', async () => {
     const result = await postChatMock('qualquer coisa');
-    expect(result).toHaveProperty('message');
+    expect(result).toHaveProperty('reply');
   });
 
-  it('message é uma string não-vazia', async () => {
+  it('reply é uma string não-vazia', async () => {
     const result = await postChatMock('qualquer coisa');
-    expect(typeof result.message).toBe('string');
-    expect(result.message.length).toBeGreaterThan(0);
+    expect(typeof result.reply).toBe('string');
+    expect(result.reply.length).toBeGreaterThan(0);
   });
 
   it('não depende do conteúdo da mensagem enviada', async () => {
     const r1 = await postChatMock('a');
     const r2 = await postChatMock('b');
-    expect(r1.message).toBe(r2.message);
+    expect(r1.reply).toBe(r2.reply);
   });
 });

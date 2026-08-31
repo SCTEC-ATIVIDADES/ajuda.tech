@@ -1,0 +1,66 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+django: version: 5.2.17, settings: ajuda_tech.settings (from ini)
+rootdir: /app
+configfile: pytest.ini
+plugins: django-4.14.0, anyio-4.14.2, cov-7.1.0, langsmith-0.11.2
+collected 190 items
+
+chat/tests/test_acceptance.py .........                                  [  4%]
+chat/tests/test_limits.py ......                                         [  7%]
+chat/tests/test_security.py .........                                    [ 12%]
+chat/tests/test_views.py .............................................   [ 36%]
+chat/tests/test_webhook.py .....                                         [ 38%]
+chat/tests/test_agent_graph.py ..........                                [ 44%]
+chat/tests/test_agent_nodes.py ....                                      [ 46%]
+chat/tests/test_agent_prompts.py ......                                  [ 49%]
+chat/tests/test_agent_tools.py .................                         [ 58%]
+chat/tests/test_catalog_integration.py .......                           [ 62%]
+chat/tests/test_observability.py ...                                     [ 63%]
+chat/tests/test_observability_analysis.py .                              [ 64%]
+chat/tests/test_prompts.py ..................                            [ 73%]
+chat/tests/test_services.py ............................................ [ 96%]
+..                                                                       [ 97%]
+chat/tests/test_spec005_observability.py ....                            [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.14-final-0 _______________
+
+Name                                        Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------
+chat/__init__.py                                0      0   100%
+chat/admin.py                                   2      2     0%   1-5
+chat/agent/__init__.py                          0      0   100%
+chat/agent/graph.py                            52      0   100%
+chat/agent/nodes.py                           221     29    87%   51, 61, 81, 88, 92, 98, 175, 197, 219-221, 231-235, 282, 326-329, 380-382, 397-401
+chat/agent/state.py                            43      0   100%
+chat/agent/tools.py                           105     19    82%   29, 46, 56, 62-65, 74, 79-82, 116-117, 120, 170, 176-178
+chat/apps.py                                    5      0   100%
+chat/exceptions.py                              8      0   100%
+chat/migrations/__init__.py                     0      0   100%
+chat/models.py                                  2      0   100%
+chat/observability.py                          88      2    98%   43, 96
+chat/prompts.py                                15      0   100%
+chat/services.py                              211     31    85%   69, 80-81, 92-93, 97-99, 106, 234, 282-284, 312-316, 320-321, 345-351, 388-389, 394, 400, 404, 406, 409
+chat/tests/__init__.py                          0      0   100%
+chat/tests/test_acceptance.py                 107      0   100%
+chat/tests/test_agent_graph.py                 66      0   100%
+chat/tests/test_agent_nodes.py                 24      0   100%
+chat/tests/test_agent_prompts.py               25      0   100%
+chat/tests/test_agent_tools.py                 80      0   100%
+chat/tests/test_catalog_integration.py         53      0   100%
+chat/tests/test_limits.py                      81      0   100%
+chat/tests/test_observability.py               32      0   100%
+chat/tests/test_observability_analysis.py      13      0   100%
+chat/tests/test_prompts.py                     44      0   100%
+chat/tests/test_security.py                    47      0   100%
+chat/tests/test_services.py                   280      0   100%
+chat/tests/test_spec005_observability.py       41      0   100%
+chat/tests/test_views.py                      274      0   100%
+chat/tests/test_webhook.py                     50      0   100%
+chat/urls.py                                    4      0   100%
+chat/views.py                                 272     31    89%   139, 217-218, 234-246, 288-289, 296-299, 317, 394, 408-410, 414-416, 423-425, 432-434
+-------------------------------------------------------------------------
+TOTAL                                        2245    114    95%
+Required test coverage of 80% reached. Total coverage: 94.92%
+============================= 190 passed in 13.92s =============================

@@ -1,0 +1,15 @@
+Analise os eventos JSON anonimizados abaixo.
+
+Tarefas:
+1. Liste anomalias de latência usando limite de 500 ms.
+2. Calcule tendência simples primeira observação versus última, em percentual.
+3. Informe incerteza: há apenas duas observações comparáveis para catalog.
+4. Classifique risco como baixo, médio ou alto e justifique.
+5. Responda em JSON com campos: anomalies, trend, uncertainty, risk, justification.
+
+Dados anonimizados:
+[
+  {"stage":"request","event":"complete","duration_ms":10,"status":"ok"},
+  {"stage":"catalog","event":"complete","duration_ms":700,"status":"ok"},
+  {"stage":"catalog","event":"complete","duration_ms":900,"status":"ok"}
+]

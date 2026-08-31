@@ -28,6 +28,20 @@ class TestChatView:
         response = django_client.get(reverse("chat:chat"))
         assert response.status_code == 200
 
+    @patch("chat.views.OpenRouterClient")
+    def test_get_preserves_session(self, MockClient, django_client):
+        MockClient.return_value.chat_completion.return_value = "ok"
+        django_client.post(
+            reverse("chat:send_message"),
+            data=json.dumps({"message": "continuidade"}),
+            content_type="application/json",
+        )
+
+        response = django_client.get(reverse("chat:chat"))
+
+        assert response.status_code == 200
+        assert django_client.session["chat_history"][0]["content"] == "continuidade"
+
     def test_get_uses_correct_template(self, django_client):
         response = django_client.get(reverse("chat:chat"))
         assert any(t.name == "chat/chat.html" for t in response.templates)
@@ -36,6 +50,49 @@ class TestChatView:
         response = django_client.get(reverse("chat:chat"))
         content = response.content.decode()
         assert "csrfmiddlewaretoken" in content or "csrf" in content.lower()
+
+
+# ─── TestNewConversationView ───────────────────────────────────────────────────
+
+@pytest.mark.django_db
+class TestNewConversationView:
+    def test_post_clears_session(self, django_client):
+        session = django_client.session
+        session["chat_history"] = [{"role": "user", "content": "antiga"}]
+        session["user_needs"] = {"proposito": "estudos"}
+        session.save()
+
+        response = django_client.post(reverse("chat:new_conversation"))
+
+        assert response.status_code == 200
+        assert django_client.session.get("chat_history") is None
+        assert django_client.session.get("user_needs") is None
+
+    def test_get_is_not_allowed(self, django_client):
+        assert django_client.get(reverse("chat:new_conversation")).status_code == 405
+
+    def test_expired_session_starts_without_old_context(self, django_client):
+        session = django_client.session
+        session["chat_history"] = [{"role": "user", "content": "antiga"}]
+        session["user_needs"] = {"proposito": "estudos"}
+        session.set_expiry(-1)
+        session.save()
+
+        with patch("chat.views._get_agent_graph") as get_graph:
+            get_graph.return_value.invoke.return_value = {
+                "messages": [{"role": "assistant", "content": "nova conversa"}],
+                "user_needs": {},
+            }
+            response = django_client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": "começar"}),
+                content_type="application/json",
+            )
+
+        assert response.status_code == 200
+        initial_state = get_graph.return_value.invoke.call_args.args[0]
+        assert initial_state["messages"] == [{"role": "user", "content": "começar"}]
+        assert initial_state["user_needs"] == {}
 
 
 # ─── TestSendMessageView ──────────────────────────────────────────────────────
@@ -114,6 +171,77 @@ class TestSendMessageView:
         assert response.status_code == 503
 
     @patch("chat.views.OpenRouterClient")
+    def test_continues_session_history(self, MockClient, django_client):
+        MockClient.return_value.chat_completion.side_effect = ["primeira", "segunda"]
+
+        self._post(django_client, {"message": "contexto"})
+        self._post(django_client, {"message": "continua"})
+
+        history = django_client.session["chat_history"]
+        assert [item["content"] for item in history] == [
+            "contexto", "primeira", "continua", "segunda"
+        ]
+
+    def test_rejects_oversized_message(self, django_client):
+        response = self._post(django_client, {"message": "x" * 4001})
+        assert response.status_code == 413
+
+    def test_rejects_oversized_request_body(self, django_client):
+        response = django_client.post(
+            reverse("chat:send_message"),
+            data=json.dumps({"message": "ok", "padding": "x" * 8200}),
+            content_type="application/json",
+        )
+        assert response.status_code == 413
+
+    @patch("chat.views._persist", return_value=False)
+    @patch("chat.views.OpenRouterClient")
+    def test_returns_500_when_session_persistence_fails(self, MockClient, _persist, django_client):
+        MockClient.return_value.chat_completion.return_value = "resposta"
+
+        response = self._post(django_client, {"message": "teste"})
+
+        assert response.status_code == 500
+
+    def test_persistence_failure_emits_structured_memory_event(self):
+        from types import SimpleNamespace
+        from chat.views import _persist
+
+        class BrokenSession:
+            def __setitem__(self, key, value):
+                raise RuntimeError("session unavailable")
+
+        with patch("chat.views.emit_event") as emit:
+            assert not _persist(SimpleNamespace(session=BrokenSession()), [], {})
+
+        emit.assert_called_once()
+        assert emit.call_args.args[:3] == ("memory", "persist", "error")
+        assert isinstance(emit.call_args.kwargs["error"], RuntimeError)
+
+    def test_agent_reuses_thread_id_across_requests(self, django_client):
+        with patch("chat.views._get_agent_graph") as get_graph:
+            get_graph.return_value.invoke.side_effect = [
+                {"messages": [{"role": "assistant", "content": "Primeira"}], "user_needs": {}},
+                {"messages": [{"role": "assistant", "content": "Segunda"}], "user_needs": {}},
+            ]
+            first = django_client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": "Primeira mensagem"}),
+                content_type="application/json",
+            )
+            second = django_client.post(
+                reverse("chat:agent_send_message"),
+                data=json.dumps({"message": "Segunda mensagem"}),
+                content_type="application/json",
+            )
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        calls = get_graph.return_value.invoke.call_args_list
+        assert calls[0].args[0]["thread_id"] == calls[1].args[0]["thread_id"]
+
+
+    @patch("chat.views.OpenRouterClient")
     def test_returns_500_when_authentication_fails(self, MockClient, django_client):
         MockClient.return_value.chat_completion.side_effect = AuthenticationError(
             "chave inválida"
@@ -161,15 +289,23 @@ class TestRecommendView:
             content_type="application/json",
         )
 
+    def _seed_history(self, django_client):
+        session = django_client.session
+        session["chat_history"] = [{"role": "user", "content": "preciso estudar"}]
+        session.save()
+        django_client.cookies[settings.SESSION_COOKIE_NAME] = session.session_key
+
     @patch("chat.views.OpenRouterClient")
     def test_returns_200_on_success(self, MockClient, django_client):
         MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+        self._seed_history(django_client)
         response = self._post(django_client, {})
         assert response.status_code == 200
 
     @patch("chat.views.OpenRouterClient")
     def test_response_contains_products_key(self, MockClient, django_client):
         MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+        self._seed_history(django_client)
         response = self._post(django_client, {})
         data = json.loads(response.content)
         assert "products" in data
@@ -177,21 +313,24 @@ class TestRecommendView:
     @patch("chat.views.OpenRouterClient")
     def test_products_list_has_three_items(self, MockClient, django_client):
         MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+        self._seed_history(django_client)
         response = self._post(django_client, {})
         data = json.loads(response.content)
         assert len(data["products"]) == 3
 
-    @patch("chat.views.OpenRouterClient")
-    def test_returns_200_even_with_empty_history(self, MockClient, django_client):
-        MockClient.return_value.get_product_recommendations.return_value = _SAMPLE_PRODUCTS
+    def test_rejects_empty_history(self, django_client):
         response = self._post(django_client, {})
-        assert response.status_code == 200
+        assert response.status_code == 400
 
     @patch("chat.views.OpenRouterClient")
     def test_returns_503_when_service_unavailable(self, MockClient, django_client):
         MockClient.return_value.get_product_recommendations.side_effect = (
             ServiceUnavailableError("fora do ar")
         )
+        session = django_client.session
+        session["chat_history"] = [{"role": "user", "content": "preciso de um computador"}]
+        session.save()
+        django_client.cookies[settings.SESSION_COOKIE_NAME] = session.session_key
         response = self._post(django_client, {})
         assert response.status_code == 503
 
@@ -289,6 +428,28 @@ class TestAgentSendMessageView:
     def test_returns_405_for_get_request(self, django_client):
         response = django_client.get(reverse("chat:agent_send_message"))
         assert response.status_code == 405
+
+    def test_rejects_invalid_json(self, django_client):
+        response = django_client.post(
+            reverse("chat:send_message"), data="not-json", content_type="application/json"
+        )
+        assert response.status_code == 400
+
+    def test_rejects_wrong_json_type(self, django_client):
+        response = django_client.post(
+            reverse("chat:send_message"), data="[]", content_type="application/json"
+        )
+        assert response.status_code == 400
+
+    def test_rejects_request_without_csrf(self):
+        from django.test import Client
+        csrf_client = Client(enforce_csrf_checks=True)
+        response = csrf_client.post(
+            reverse("chat:send_message"),
+            data=json.dumps({"message": "teste"}),
+            content_type="application/json",
+        )
+        assert response.status_code == 403
 
     @patch("chat.views._get_agent_graph")
     def test_returns_500_on_unexpected_agent_error(self, mock_get_graph, django_client):

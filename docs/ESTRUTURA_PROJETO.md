@@ -1,151 +1,106 @@
-# Estrutura do Projeto "ajuda.tech" (MVP Simplificado)
+# Estrutura do Projeto
 
-Este documento apresenta a estrutura de pastas e arquivos do projeto, seguindo o padrão de arquitetura modular do Django com separação clara para a lógica de negócio de IA.
+Projeto Django sem login obrigatório. Conversa fica em sessão assinada; modelos de conversa permanecem desativados. Grafo e integração LLM ficam separados da camada HTTP.
 
-**Simplificações do MVP:**
-- Sem login obrigatório
-- Sem banco de dados (histórico em memória/session)
-- Arquitetura mínima para máxima velocidade de desenvolvimento
-
-```
+```text
 ajuda.tech/
-├── ajuda_tech/                    # Configurações principais do Django
-│   ├── __init__.py
-│   ├── settings.py                # Configurações do projeto
-│   ├── urls.py                    # Rotas principais do projeto
-│   └── wsgi.py                    # Configuração WSGI para produção
-├── chat/                          # App Django principal
-│   ├── __init__.py
-│   ├── admin.py
-│   ├── apps.py
-│   ├── exceptions.py
-│   ├── models.py                  # Classes de persistência comentadas; histórico atual em sessão
-│   ├── prompts.py                 # Gerenciamento de System Prompts
-│   ├── services.py                # Lógica de comunicação com OpenRouter
-│   ├── urls.py                    # Rotas do chat
-│   ├── views.py                   # ChatView, SendMessageView, RecommendView
-│   ├── migrations/
-│   │   └── __init__.py
+├── ajuda_tech/
+│   ├── settings.py              # ambiente, segurança e sessão
+│   ├── urls.py                  # inclui chat.urls
+│   └── wsgi.py
+├── chat/
+│   ├── agent/
+│   │   ├── graph.py             # StateGraph, rotas e Send
+│   │   ├── nodes.py             # nós do agente
+│   │   ├── state.py             # AgentState e reducers
+│   │   └── tools.py             # catálogo, comparação e relatório
+│   ├── static/chat/             # JS, CSS e testes Vitest
 │   ├── templates/chat/chat.html
-│   └── static/chat/
-│       ├── css/chat.css
-│       ├── index.html             # Preview standalone (sem Django)
-│       └── js/
-│           ├── chatApp.js
-│           ├── chatApi.js
-│           ├── chatUi.js
-│           ├── chatState.js
-│           └── chatTheme.js
-├── core/                          # App auxiliar (landing page / não roteada)
-│   ├── __init__.py
-│   ├── apps.py
-│   ├── urls.py
-│   ├── views.py
-│   └── templates/core/index.html
-├── docs/                          # Documentação do projeto
-│   ├── DIAGRAMA_SEQUENCIA.md
-│   ├── ESTRUTURA_PROJETO.md
-│   ├── FLUXO_USUARIO.md
-│   ├── PRD.md
-│   └── USER_STORIES.md
-├── prompts/                       # Histórico de prompts de sessão
-├── prompts-mini-projeto/          # Sessões anteriores de desenvolvimento
-├── .gitignore
-├── AGENTS.md
+│   ├── tests/                   # pytest-django
+│   ├── prompts.py               # prompts internos
+│   ├── services.py              # único cliente OpenRouter
+│   ├── views.py                 # endpoints, sessão e webhook
+│   └── urls.py
+├── core/                        # app auxiliar; não incluída nas rotas atuais
+├── docs/                        # documentação
+├── evidence/                    # evidências sanitizadas
+├── n8n/workflows/               # workflow exportado
+├── produtos.json                # catálogo local
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
 ├── package.json
 ├── pytest.ini
 ├── vitest.config.js
-├── db.sqlite3
 └── manage.py
 ```
 
-## Descrição dos Componentes Críticos para Integração com LLM
+## Fluxo principal
+
+`POST /agent/send/` valida JSON, tamanho, CSRF, injection e rate limit. Depois cria `AgentState`, invoca o grafo e salva histórico/necessidades na sessão.
+
+```text
+START → classify_msg
+  ├── greet → END
+  ├── gather_needs → respond
+  └── prepare_catalog → Send(notebook, desktop)
+       → catalog_worker → consolidate_catalog
+       → compare_catalog_products → recommend → report → respond → END
+```
+
+Falha de ramo de catálogo é registrada como resultado parcial.
+
+## Componentes
+
+### `chat/agent/state.py`
+
+`AgentState` tipado contém mensagens, necessidades, trabalhos/resultados de catálogo, erros, recomendação, relatório, IDs de execução e metadados de prazo. Reducers agregam resultados paralelos.
+
+### `chat/agent/tools.py`
+
+Whitelist fixa de três tools read-only:
+
+- `buscar_produtos`: valida categoria/orçamento e consulta catálogo.
+- `comparar_produtos`: compara dois IDs válidos.
+- `gerar_relatorio`: produz Markdown escapado.
+
+Catálogo externo é opcional via `CATALOG_API_URL`. Resposta passa schema; timeout, conexão e HTTP 5xx têm até duas tentativas; falha usa catálogo local.
 
 ### `chat/services.py`
-Responsável pela comunicação direta com a API do OpenRouter. Deve implementar:
-- **Timeout handling**: Configuração de timeouts apropriados para requisições HTTP
-- **Retry logic**: Mecanismo de retentativas em caso de falhas (exponential backoff)
-- **Error handling**: Tratamento graceful de erros da API
-- **Rate limiting**: Controle de taxa de requisições para evitar bloqueios
+
+Cliente OpenRouter. Usa `LLM_API_KEY`, `LLM_MODEL`, `LLM_TIMEOUT`, headers de site e limites de tokens. Retenta timeout, conexão e HTTP 5xx; não retenta erros 4xx de autenticação, cobrança ou limite.
 
 ### `chat/prompts.py`
-Arquivo isolado para gerenciamento dos System Prompts. Deve conter:
-- **System Prompt Principal**: Instruções rígidas para traduzir termos leigos para especificações técnicas
-- **Prompts de Contexto**: Informações sobre hardware, preços, compatibilidade
-- **Templates de Resposta**: Formatação padronizada das respostas ao usuário
-- **Versionamento**: Controle de versões dos prompts para facilitar ajustes
+
+Único local de system prompts e instruções de classificação, extração e resposta. Conteúdo é interno e não deve ser exposto.
 
 ### `chat/views.py`
-Views do chat que gerenciam:
-- **Recebimento de mensagens**: Endpoint POST para receber mensagens do usuário
-- **Gerenciamento de sessão**: Recuperação e armazenamento do histórico em memória
-- **Resposta formatada**: Retorno de explicação + especificações técnicas
 
-### `chat/consumers.py` (Opcional)
-Implementação de WebSocket para comunicação em tempo real:
-- **AsyncWebsocketConsumer**: Consumer assíncrono para melhor performance
-- **Gerenciamento de estado**: Manutenção do contexto da conversa em memória
+Rotas principais: `/`, `/agent/send/`, `/send/`, `/recommend/`, `/new/` e `/automation/webhook/`. Histórico máximo 50 entradas; janela LLM máxima 20 mensagens; mensagem máxima 4.000 caracteres; corpo máximo 8.192 bytes; rate limit 10 requisições por sessão em 60 segundos.
 
-## Arquivos de Ambiente
+### Frontend
 
-### `.env`
-O projeto não inclui um arquivo `.env` no repositório. Crie um arquivo local com as variáveis necessárias.
+Django template envia CSRF. `marked` renderiza Markdown e `DOMPurify` sanitiza HTML. Estado exibido vive em memória; reload não consulta histórico persistido no backend.
+
+## Ambiente e execução
 
 ```bash
-SECRET_KEY=sua_chave_secreta_aqui
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-LLM_API_KEY=sua_chave_de_api_aqui
-LLM_PROVIDER=openai
-LLM_MODEL=deepseek/deepseek-v4-flash:free
-LLM_TIMEOUT=30
-SITE_URL=http://localhost:8000
-SITE_NAME=Ajuda Tech
-LOG_LEVEL=INFO
+python -m pip install -r requirements.txt
+cp .env.example .env
+python manage.py migrate
+python manage.py runserver
 ```
 
-### `requirements.txt`
-```
-Django>=5.0,<6.0
-python-decouple>=3.8
-requests>=2.31.0
-django-cors-headers>=4.0.0
-pytest>=8.0.0
-pytest-django>=4.8.0
-pytest-cov>=5.0.0
+Docker executa migração e servidor; imagem também valida lint e testes frontend durante build.
+
+```bash
+docker compose up --build
 ```
 
-### Docker / Container
-Este repositório não inclui um `Dockerfile` atualmente.
+## Segurança
 
-## Convenções de Nomenclatura
+CSRF global; webhook usa HMAC-SHA256 e deduplicação de `event_id`; produção exige configurações seguras; credenciais ficam fora do Git; catálogo e saída Markdown são validados/escapados.
 
-- **Apps Django**: Nomes em minúsculo (chat)
-- **Views e URLs**: snake_case (chat_view, user_messages)
-- **Templates**: snake_case com extensão .html
-- **Commits Git**: Português ou Inglês, descritivos e concisos
+## Estado documental
 
-## Diferenças do MVP Simplificado
-
-### Removido
-- ~~App `core`~~ (não há landing page separada)
-- ~~App `auth`~~ (sem login)
-- ~~Models de banco~~ (sem persistência)
-- ~~Migrações~~ (sem banco de dados)
-- ~~Admin Django~~ (sem dados para gerenciar)
-- ~~Pasta `locale`~~ (internacionalização futura)
-
-### Simplificado
-- **1 única app** (`chat`) em vez de múltiplas apps
-- **Session em memória** em vez de banco de dados
-- **Cookies assinados** para manter sessão do usuário
-
-## Próximos Passos
-
-1. Criar o projeto Django com `django-admin startproject ajuda_tech`
-2. Criar a app com `python manage.py startapp chat`
-3. Implementar o serviço de comunicação com OpenRouter
-4. Criar a interface do chatbot com Django Templates
-5. Configurar sessão em memória para histórico
-6. Escrever testes unitários e de integração
+Este arquivo descreve código existente, não plano futuro. Itens externos sem execução comprovada permanecem `PARTIAL` ou `BLOCKED` na matriz do [README](../README.md).

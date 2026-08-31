@@ -1,0 +1,20 @@
+# Spec 002 — execução reproduzível
+
+```bash
+docker compose up -d --build
+docker compose exec -T catalog python -c '... GET /products, /products/empty, /products/error ...'
+docker compose exec -T -e CATALOG_API_URL=http://catalog:8080/products app python manage.py shell -c '... buscar_produtos ...'
+docker compose exec -T -e CATALOG_API_URL= app pytest -q
+```
+
+Resultados observados:
+
+- Serviço `catalog` iniciou na rede Compose e respondeu HTTP 200 em `/products`.
+- `buscar_produtos` consumiu `http://catalog:8080/products` e retornou `origem: externo`.
+- Resposta vazia foi aceita como catálogo externo vazio.
+- Resposta HTTP 503 acionou fallback local.
+- Suíte isolada sem `CATALOG_API_URL` passou: 186 testes.
+- Os testes isolados sobrescrevem a variável para não depender do `.env` local.
+- Nenhuma chave, URL de terceiro ou dado pessoal foi registrado.
+
+O serviço é um mock HTTP local versionado, não uma API pública de terceiro.

@@ -1,0 +1,8 @@
+[
+  {"timestamp":"2026-01-01T00:00:00+00:00","trace_id":"trace-normal","run_id":"run-normal","stage":"request","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-01-01T00:00:00.010000+00:00","trace_id":"trace-normal","run_id":"run-normal","stage":"request","event":"complete","status":"ok","duration_ms":10,"error_type":null},
+  {"timestamp":"2026-01-01T00:00:01+00:00","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-01-01T00:00:01.700000+00:00","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog","event":"complete","status":"ok","duration_ms":700,"error_type":null},
+  {"timestamp":"2026-01-01T00:00:02+00:00","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-01-01T00:00:02.900000+00:00","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog","event":"complete","status":"ok","duration_ms":900,"error_type":null}
+]

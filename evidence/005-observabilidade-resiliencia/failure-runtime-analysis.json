@@ -1,0 +1,194 @@
+{
+  "ai_analysis": {
+    "reason": "external AI unavailable; deterministic gate used",
+    "status": "not_called"
+  },
+  "anomalies": [
+    {
+      "duration_ms": 3011.29,
+      "stage": "tool.buscar_produtos",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3012.07,
+      "stage": "catalog.notebook",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3012.77,
+      "stage": "catalog_worker",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3010.49,
+      "stage": "tool.buscar_produtos",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3012.11,
+      "stage": "catalog.desktop",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3012.46,
+      "stage": "catalog_worker",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3010.26,
+      "stage": "tool.comparar_produtos",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 3011.71,
+      "stage": "compare_catalog_products",
+      "threshold_ms": 500
+    },
+    {
+      "duration_ms": 6033.95,
+      "stage": "request",
+      "threshold_ms": 500
+    }
+  ],
+  "durations_ms": {
+    "catalog.compare": 0.0,
+    "catalog.consolidate": 0.0,
+    "catalog.desktop": 3012.11,
+    "catalog.notebook": 3012.07,
+    "catalog_worker": 6025.23,
+    "classify_msg": 0.2,
+    "compare_catalog_products": 3011.71,
+    "consolidate_catalog": 0.12,
+    "gather_needs": 0.16,
+    "prepare_catalog": 0.06,
+    "recommend": 0.24,
+    "report": 0.88,
+    "request": 6033.95,
+    "respond": 0.08,
+    "tool.buscar_produtos": 6021.78,
+    "tool.comparar_produtos": 3010.26,
+    "tool.gerar_relatorio": 0.09
+  },
+  "failures": [],
+  "probable_cause": null,
+  "risk": "medium",
+  "run_id": "a1ff8490-5090-450a-b2f1-d1ba1fbf2a18",
+  "slowest_stage": "request",
+  "stages": [
+    "request",
+    "classify_msg",
+    "gather_needs",
+    "prepare_catalog",
+    "catalog_worker",
+    "catalog.notebook",
+    "tool.buscar_produtos",
+    "catalog_worker",
+    "catalog.desktop",
+    "tool.buscar_produtos",
+    "consolidate_catalog",
+    "compare_catalog_products",
+    "tool.comparar_produtos",
+    "recommend",
+    "report",
+    "tool.gerar_relatorio",
+    "respond"
+  ],
+  "trace_id": "9ed1b370-ed4d-4593-b682-9658ecd243d6",
+  "trend": {
+    "catalog.compare": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog.consolidate": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog.desktop": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog.notebook": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "catalog_worker": {
+      "change_percent": -0.01,
+      "first_ms": 3012.77,
+      "last_ms": 3012.46,
+      "method": "first_to_last_percent_change",
+      "status": "computed",
+      "uncertainty": "high: two observations; no confidence interval"
+    },
+    "classify_msg": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "compare_catalog_products": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "consolidate_catalog": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "gather_needs": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "prepare_catalog": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "recommend": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "report": {
+      "change_percent": 0,
+      "first_ms": 0.0,
+      "last_ms": 0.88,
+      "method": "first_to_last_percent_change",
+      "status": "computed",
+      "uncertainty": "high: two observations; no confidence interval"
+    },
+    "request": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "respond": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "tool.buscar_produtos": {
+      "change_percent": -0.03,
+      "first_ms": 3011.29,
+      "last_ms": 3010.49,
+      "method": "first_to_last_percent_change",
+      "status": "computed",
+      "uncertainty": "high: two observations; no confidence interval"
+    },
+    "tool.comparar_produtos": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    },
+    "tool.gerar_relatorio": {
+      "method": "first_to_last_percent_change",
+      "status": "insufficient_data",
+      "uncertainty": "high"
+    }
+  },
+  "trend_limit": "500ms anomaly threshold; fewer than 2 comparable points means insufficient_data"
+}

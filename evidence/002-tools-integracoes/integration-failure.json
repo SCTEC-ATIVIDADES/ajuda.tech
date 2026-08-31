@@ -1,0 +1,25 @@
+{
+  "scenarios": [
+    {
+      "path": "/products/empty",
+      "http_status": 200,
+      "tool_status": "ok",
+      "origem": "externo",
+      "produtos_count": 0
+    },
+    {
+      "path": "/products/error",
+      "http_status": 503,
+      "tool_status": "ok",
+      "origem": "local_fallback",
+      "fallback": true
+    },
+    {
+      "path": "/unknown",
+      "http_status": 404,
+      "tool_status": "ok",
+      "origem": "local_fallback",
+      "fallback": true
+    }
+  ]
+}

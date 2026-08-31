@@ -6,7 +6,7 @@ import {
   appendMessage,
   resetConversation,
 } from "./chatState.js";
-import { postChat, postChatMock } from "./chatApi.js";
+import { postChat, postChatMock, newConversation } from "./chatApi.js";
 
 marked.use({ gfm: true, breaks: true });
 
@@ -101,13 +101,18 @@ export function initChatApp(root = document) {
     }
   }
 
-  function handleNewConversation() {
-    state = resetConversation();
-    clearError(errorEl);
-    setTypingVisible(typingEl, false);
-    inputEl.value = "";
-    refresh();
-    inputEl.focus();
+  async function handleNewConversation() {
+    try {
+      await newConversation();
+      state = resetConversation();
+      clearError(errorEl);
+      setTypingVisible(typingEl, false);
+      inputEl.value = "";
+      refresh();
+      inputEl.focus();
+    } catch (err) {
+      showError(errorEl, err.message || "Não foi possível iniciar nova conversa.");
+    }
   }
 
   sendBtn.addEventListener("click", handleSend);

@@ -1,0 +1,5 @@
+[
+  {"stage": "request", "event": "complete", "duration_ms": 10, "status": "ok"},
+  {"stage": "catalog", "event": "complete", "duration_ms": 700, "status": "ok"},
+  {"stage": "catalog", "event": "complete", "duration_ms": 900, "status": "ok"}
+]

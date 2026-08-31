@@ -1,3 +1,5 @@
+# Documento histórico — não descreve arquitetura operacional atual
+
 # Role: Desenvolvedor Backend Django Sênior
 
 ## Contexto

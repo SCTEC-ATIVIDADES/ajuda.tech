@@ -1,0 +1,20 @@
+{
+  "executed_at": "2026-08-30T04:44:01.294846+00:00",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "analysis": {
+    "anomalies": [
+      {
+        "stage": "catalog",
+        "duration_ms": 700
+      },
+      {
+        "stage": "catalog",
+        "duration_ms": 900
+      }
+    ],
+    "trend": 28.57,
+    "uncertainty": "Only two catalog observations are available, limiting statistical confidence.",
+    "risk": "high",
+    "justification": "Both catalog events exceed the 500 ms latency threshold, and latency increased ~28.6 % from the first to the last observation. With only two data points the trend is uncertain, but the consistent breach indicates a high risk of performance degradation."
+  }
+}

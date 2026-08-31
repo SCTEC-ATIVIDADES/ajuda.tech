@@ -1,0 +1,36 @@
+# Evidência de execução — Spec 006
+
+- Ambiente validado exclusivamente em Docker: Python 3.12.14, Django 5.2.17, pytest 9.1.1, Node/npm da imagem.
+- Nenhum teste executa API externa; LLM e catálogo são mockados nos testes.
+
+## Resultados atuais
+
+```text
+docker build --tag ajuda-tech-spec006 .
+PASS — lint frontend e Vitest: 99 testes em 9 arquivos
+
+python manage.py check
+PASS — 0 issues
+
+python manage.py migrate --no-input
+PASS
+
+pytest -q
+PASS — 190 testes
+
+pytest --cov=chat --cov-report=term-missing --cov-fail-under=80 -q
+PASS — cobertura acima do limite de 80%
+```
+
+## Cobertura de risco
+
+- Foco QA endpoint→grafo: aprovado.
+- Cenário normal e falha de catálogo: aprovado.
+- Persistência e recuperação de sessão: aprovado.
+- Prompt injection, payload, rate limit e CSRF: aprovados.
+- Contrato frontend, erro e reenvio: 99 testes Vitest aprovados.
+- Observabilidade, timeout, retry, fallback e erro não recuperável: aprovados.
+
+## Limitações
+
+`ruff` e `mypy` não são gates deste projeto. Vídeo, publicação, permissões e ambiente público pertencem às Specs 009–010.

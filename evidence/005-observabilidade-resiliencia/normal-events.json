@@ -1,0 +1,19 @@
+[
+  {"timestamp":"2026-08-30T02:25:29.691Z","trace_id":"trace-normal","run_id":"run-normal","stage":"request","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.692Z","trace_id":"trace-normal","run_id":"run-normal","stage":"classify_msg","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.700Z","trace_id":"trace-normal","run_id":"run-normal","stage":"classify_msg","event":"complete","status":"ok","duration_ms":1.2,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.701Z","trace_id":"trace-normal","run_id":"run-normal","stage":"gather_needs","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.705Z","trace_id":"trace-normal","run_id":"run-normal","stage":"gather_needs","event":"complete","status":"ok","duration_ms":2.1,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.706Z","trace_id":"trace-normal","run_id":"run-normal","stage":"prepare_catalog","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.708Z","trace_id":"trace-normal","run_id":"run-normal","stage":"prepare_catalog","event":"complete","status":"ok","duration_ms":1.1,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.709Z","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog.notebook","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.710Z","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog.notebook","event":"complete","status":"ok","duration_ms":12.4,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.711Z","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog.desktop","event":"start","status":"started","duration_ms":0,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.712Z","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog.desktop","event":"complete","status":"ok","duration_ms":10.2,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.713Z","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog.consolidate","event":"complete","status":"ok","duration_ms":0.2,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.714Z","trace_id":"trace-normal","run_id":"run-normal","stage":"catalog.compare","event":"complete","status":"ok","duration_ms":0.4,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.715Z","trace_id":"trace-normal","run_id":"run-normal","stage":"recommend","event":"complete","status":"ok","duration_ms":3.8,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.716Z","trace_id":"trace-normal","run_id":"run-normal","stage":"report","event":"complete","status":"ok","duration_ms":0.8,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.717Z","trace_id":"trace-normal","run_id":"run-normal","stage":"respond","event":"complete","status":"ok","duration_ms":3.1,"error_type":null},
+  {"timestamp":"2026-08-30T02:25:29.718Z","trace_id":"trace-normal","run_id":"run-normal","stage":"request","event":"complete","status":"ok","duration_ms":27.0,"error_type":null}
+]

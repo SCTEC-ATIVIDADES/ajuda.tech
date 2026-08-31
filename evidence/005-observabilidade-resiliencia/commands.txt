@@ -1,0 +1,10 @@
+Docker-only commands executed:
+
+- `docker compose up -d --build`: passed; app, catalog and n8n started.
+- `docker compose exec -T -e CATALOG_API_URL= app python capture_spec005_runtime.py`: passed; executed `POST /agent/send/` against `catalog:8080/products` and `catalog:8080/products/error`.
+- Harness persisted `normal-runtime.json`, `normal-runtime-events.json`, `normal-runtime-metrics.json`, `failure-runtime.json`, `failure-runtime-events.json`, and `failure-runtime-metrics.json`.
+- `docker compose exec -T -e CATALOG_API_URL= app python analyze_observability.py evidence/005-observabilidade-resiliencia/normal-runtime-events.json`: passed.
+- Same command with `failure-runtime-events.json`: passed; failure anomaly identified and fallback execution correlated.
+- `docker compose down`: passed.
+
+The harness records HTTP status and response keys only. It excludes message content, prompts, credentials and external payloads.

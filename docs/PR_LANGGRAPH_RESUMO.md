@@ -2,81 +2,68 @@
 
 ## Resumo
 
-Implementação completa do agente **Herbert** usando **LangGraph** para o Módulo 2 do projeto Ajuda Tech. O agente agora fluxo em grafo com 7 nós, 3 tools integradas e estado compartilhado.
+Agente **Herbert** implementado com **LangGraph**, estado tipado (`AgentState`) e fluxo de catálogo com fan-out/fan-in. O grafo cobre classificação, coleta de necessidades, busca paralela de produtos, recomendação, relatório e resposta.
 
 ## Mudanças Principais
 
-### Novo módulo `chat/agent/`
+### Módulo `chat/agent/`
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `state.py` | Estado compartilhado (`AgentState` TypedDict) com messages, user_needs, products_found, stage, recommendation, report, classified_intent |
-| `tools.py` | 3 tools: `buscar_produtos` (consulta JSON), `comparar_produtos` (comparação), `gerar_relatorio` (relatório Markdown) |
-| `nodes.py` | 7 nós do grafo: classify, greet, gather_needs, extract_context, recommend, report, respond |
-| `graph.py` | StateGraph montado com edges condicionais e compilado |
+| `state.py` | Contratos tipados (`TypedDict`) para estado, trabalhos, produtos, resultados e erros |
+| `tools.py` | Tools de consulta de produtos, comparação e relatório Markdown |
+| `nodes.py` | Nós `classify_msg`, `gather_needs`, `prepare_catalog`, `catalog_worker`, `consolidate_catalog`, `recommend`, `report` e `respond`, além de `greet` |
+| `graph.py` | `StateGraph` compilado com roteamento condicional, `Send` e reducers |
 
-### Base de dados
+### Fluxo do Agente
 
-- `produtos.json` — 12 produtos (6 notebooks + 6 desktops), faixas R$2.199 a R$7.999
+```text
+START → classify_msg → [greet → END | gather_needs → respond | prepare_catalog]
+                                      prepare_catalog → Send → catalog_worker (ramos)
+                                      catalog_worker → consolidate_catalog
+                                      consolidate_catalog → recommend → report → respond → END
+```
+
+`gather_needs` vai para `prepare_catalog` quando propósito e orçamento estão disponíveis; caso contrário, vai para `respond` para solicitar dados faltantes. `prepare_catalog` cria ramos para notebook e desktop. `consolidate_catalog` agrega produtos disponíveis e registra erros dos ramos que falharam, preservando falhas parciais.
 
 ### Integração
 
-- `chat/views.py` — Novo endpoint `AgentSendMessageView` (`POST /chat/agent/send/`)
-- `chat/urls.py` — Rota `/agent/send/` adicionada
-- `requirements.txt` — `langgraph>=0.2.0` e `langchain-core>=0.3.0`
+- `chat/views.py` — endpoint `AgentSendMessageView` (`POST /agent/send/`)
+- `chat/urls.py` — rota `/agent/send/`
+- `requirements.txt` — dependências LangGraph e LangChain Core
+- `produtos.json` — catálogo local
 
-### Documentação
+## Estado Compartilhado
 
-- `docs/MODULO2_LANGGRAPH_EVOLUCAO.md` — Plano de evolução com gap analysis
-- `docs/prompts/prompt-modulo2-langgraph-evolucao.md` — Prompts da fase de planejamento
-- `docs/prompts/prompt-modulo2-langgraph-implementacao.md` — Prompts da fase de implementação + prompts internos dos nós
-
-## Fluxo do Agente
-
+```python
+class AgentState(TypedDict, total=False):
+    messages: Annotated[list, add_messages]
+    user_needs: dict[str, object]
+    products_found: list[Product]
+    catalog_jobs: list[CatalogJob]
+    branch_job: CatalogJob
+    catalog_results: Annotated[list[CatalogBranchResult], add]
+    errors: Annotated[list[str], add]
+    stage: str
+    recommendation: str
+    report: str
+    classified_intent: str
 ```
-START → classify_msg → [greet | gather_needs | recommend]
-                              ↓
-                        extract_context → recommend → report → respond → END
-```
 
-## Como Testar
+`catalog_results` e `errors` usam reducers para reunir resultados dos ramos `catalog_worker`.
+
+## Como Executar
 
 ```bash
-# Instalar dependências
-pip install -r requirements.txt
-
-# Rodar o servidor
+python -m pip install -r requirements.txt
+python manage.py migrate
 python manage.py runserver
-
-# Testar o endpoint do agente
-curl -X POST http://localhost:8000/chat/agent/send/ \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Olá, preciso de um notebook para estudos"}'
 ```
 
-## Checklists do Módulo 2
+Endpoint protegido por CSRF; use cliente/browser que preserve cookie e token CSRF. Rota: `POST /agent/send/`.
 
-- [x] Definir processo real a ser automatizado
-- [x] Implementar com LangGraph (estado, nós, conexões)
-- [x] Integrar pelo menos 1 tool (`buscar_produtos`, `comparar_produtos`, `gerar_relatorio`)
-- [x] Usar memória/contexto durante execução
-- [x] Registrar prompts em arquivos `.md`
-- [x] Documentar no README
-- [x] Versionado no GitHub
+## Documentação Relacionada
 
-## Commits
-
-| Hash | Descrição |
-|------|-----------|
-| `aed90a4` | feat: implement LangGraph agent with message handling and product recommendation |
-| `3593f5d` | docs: add implementation prompts for LangGraph module 2 |
-
-## Decisões do Grupo
-
-| Questão | Decisão |
-|---------|---------|
-| Model LLM | Manter DeepSeek |
-| Quantidade de tools | 3 tools |
-| Checkpointer | Manter cookies (implementar depois) |
-| Nós do grafo | 7 nós (classify, greet, gather, extract, recommend, report, respond) |
-| Divisão de tarefas | Passo 1 e 2 juntos; resto dividido |
+- `docs/MODULO2_LANGGRAPH_EVOLUCAO.md`
+- `docs/prompts/prompt-modulo2-langgraph-evolucao.md`
+- `docs/prompts/prompt-modulo2-langgraph-implementacao.md`

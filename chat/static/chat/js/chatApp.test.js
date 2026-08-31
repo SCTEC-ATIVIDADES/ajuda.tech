@@ -11,15 +11,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Intercepta chatApi antes de qualquer import — Vitest hoist automaticamente.
 // chatApp.js usa USE_MOCK=false, portanto postChat é sempre chamado em produção/testes.
 vi.mock('./chatApi.js', () => ({
-  CHAT_ENDPOINT: '/send/',
+  CHAT_ENDPOINT: '/automation/send/',
   postChat: vi.fn().mockResolvedValue({ reply: 'Resposta do assistente' }),
   postChatMock: vi.fn().mockResolvedValue({ reply: 'Resposta do assistente' }),
+  newConversation: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 import { initChatApp } from './chatApp.js';
 import { postChat } from './chatApi.js';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -32,8 +31,6 @@ const DOM = `
   <p id="chat-typing" hidden>Digitando...</p>
   <button id="chat-new">Nova conversa</button>
 `;
-
-// ─── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
   document.body.innerHTML = DOM;
@@ -206,27 +203,29 @@ describe('envio via teclado', () => {
 // ─── Nova conversa ────────────────────────────────────────────────────────────
 
 describe('botão Nova conversa', () => {
-  it('restaura apenas a mensagem de boas-vindas', () => {
+  it('restaura apenas a mensagem de boas-vindas', async () => {
     initChatApp(document);
     document.getElementById('chat-input').value = 'Quero um notebook';
     document.getElementById('chat-send').click();
 
     document.getElementById('chat-new').click();
+    await flushPromises();
 
     const msgs = document.querySelectorAll('.chat-message');
     expect(msgs).toHaveLength(1);
     expect(msgs[0].textContent).toContain('Herbert');
   });
 
-  it('limpa o campo de texto', () => {
+  it('limpa o campo de texto', async () => {
     initChatApp(document);
     document.getElementById('chat-input').value = 'texto pendente';
     document.getElementById('chat-new').click();
+    await flushPromises();
 
     expect(document.getElementById('chat-input').value).toBe('');
   });
 
-  it('limpa o erro visível', () => {
+  it('limpa o erro visível', async () => {
     initChatApp(document);
     const input = document.getElementById('chat-input');
 
@@ -235,15 +234,68 @@ describe('botão Nova conversa', () => {
     expect(document.getElementById('chat-error').hidden).toBe(false);
 
     document.getElementById('chat-new').click();
+    await flushPromises();
     expect(document.getElementById('chat-error').hidden).toBe(true);
   });
 });
 
-// ─── Comportamento ausente (especificação pendente) ───────────────────────────
-
 describe('tratamento de erro da API', () => {
-  it.todo(
-    'exibe mensagem de erro ao usuário quando a API retorna falha ' +
-      '— chatApp.js não tem catch no handleSend, apenas finally',
-  );
+  it('exibe mensagem de erro e marca mensagem para reenvio quando API falha', async () => {
+    postChat.mockRejectedValueOnce(
+      Object.assign(new Error('Serviço indisponível'), {
+        failedMessage: 'Preciso de um computador',
+      }),
+    );
+    initChatApp(document);
+    document.getElementById('chat-input').value = 'Preciso de um computador';
+    document.getElementById('chat-send').click();
+
+    await flushPromises();
+
+    expect(document.getElementById('chat-error').textContent).toBe(
+      'Serviço indisponível',
+    );
+    expect(document.querySelector('.chat-resend-btn')).not.toBeNull();
+  });
+
+  it('reenvia mensagem falha e exibe resposta', async () => {
+    postChat.mockRejectedValueOnce(
+      Object.assign(new Error('Serviço indisponível'), {
+        failedMessage: 'Preciso de um computador',
+      }),
+    );
+    postChat.mockResolvedValueOnce({ reply: 'Resposta após reenvio' });
+    initChatApp(document);
+    document.getElementById('chat-input').value = 'Preciso de um computador';
+    document.getElementById('chat-send').click();
+    await flushPromises();
+
+    document.querySelector('.chat-resend-btn').click();
+    await flushPromises();
+
+    expect(document.querySelectorAll('.chat-message--bot')[1].textContent).toContain(
+      'Resposta após reenvio',
+    );
+    expect(document.querySelector('.chat-resend-btn')).toBeNull();
+  });
+
+  it('mantém reenvio disponível e exibe erro quando reenvio falha', async () => {
+    postChat.mockRejectedValue(
+      Object.assign(new Error('Falha ao reenviar'), {
+        failedMessage: 'Preciso de um computador',
+      }),
+    );
+    initChatApp(document);
+    document.getElementById('chat-input').value = 'Preciso de um computador';
+    document.getElementById('chat-send').click();
+    await flushPromises();
+
+    document.querySelector('.chat-resend-btn').click();
+    await flushPromises();
+
+    expect(document.getElementById('chat-error').textContent).toBe(
+      'Falha ao reenviar',
+    );
+    expect(document.querySelector('.chat-resend-btn')).not.toBeNull();
+  });
 });

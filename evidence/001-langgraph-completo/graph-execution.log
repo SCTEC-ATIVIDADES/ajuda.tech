@@ -1,0 +1,123 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+django: version: 5.2.17, settings: ajuda_tech.settings (from ini)
+rootdir: /app
+configfile: pytest.ini
+plugins: django-4.14.0, anyio-4.14.2, cov-7.1.0, langsmith-0.11.2
+collected 9 items
+
+chat/tests/test_agent_graph.py::test_build_graph_compiles PASSED
+chat/tests/test_agent_graph.py::test_routes_classified_intents PASSED
+chat/tests/test_agent_graph.py::test_compiled_graph_runs_complete_flow INFO 2026-08-29 20:02:31,373 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "classify_msg", "status": "started", "timestamp": "2026-08-30T01:02:31.373286+00:00", "trace_id": ""}
+
+-------------------------------- live log call ---------------------------------
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "classify_msg", "status": "started", "timestamp": "2026-08-30T01:02:31.373286+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.49, "error_type": null, "event": "complete", "run_id": "", "stage": "classify_msg", "status": "ok", "timestamp": "2026-08-30T01:02:31.373777+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,373 observability {"duration_ms": 0.49, "error_type": null, "event": "complete", "run_id": "", "stage": "classify_msg", "status": "ok", "timestamp": "2026-08-30T01:02:31.373777+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,374 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "gather_needs", "status": "started", "timestamp": "2026-08-30T01:02:31.374442+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "gather_needs", "status": "started", "timestamp": "2026-08-30T01:02:31.374442+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.25, "error_type": null, "event": "complete", "run_id": "", "stage": "gather_needs", "status": "ok", "timestamp": "2026-08-30T01:02:31.374688+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,374 observability {"duration_ms": 0.25, "error_type": null, "event": "complete", "run_id": "", "stage": "gather_needs", "status": "ok", "timestamp": "2026-08-30T01:02:31.374688+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,375 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "prepare_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.375154+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,375 observability {"duration_ms": 0.19, "error_type": null, "event": "complete", "run_id": "", "stage": "prepare_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.375340+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "prepare_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.375154+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.19, "error_type": null, "event": "complete", "run_id": "", "stage": "prepare_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.375340+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,376 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.376351+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.376351+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,376 nodes CATALOG branch=notebook status=ok duration_ms=0.05 count=1
+INFO 2026-08-29 20:02:31,376 observability {"duration_ms": 0.52, "error_type": null, "event": "complete", "run_id": "", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.376869+00:00", "trace_id": ""}
+INFO     chat.agent.nodes:nodes.py:277 CATALOG branch=notebook status=ok duration_ms=0.05 count=1
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.52, "error_type": null, "event": "complete", "run_id": "", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.376869+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,377 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.377172+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.377172+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,377 nodes CATALOG branch=desktop status=ok duration_ms=0.08 count=1
+INFO     chat.agent.nodes:nodes.py:277 CATALOG branch=desktop status=ok duration_ms=0.08 count=1
+INFO 2026-08-29 20:02:31,378 observability {"duration_ms": 1.1, "error_type": null, "event": "complete", "run_id": "", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.378308+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 1.1, "error_type": null, "event": "complete", "run_id": "", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.378308+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,378 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "consolidate_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.378963+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "consolidate_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.378963+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,379 observability {"duration_ms": 0.17, "error_type": null, "event": "complete", "run_id": "", "stage": "consolidate_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.379133+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.17, "error_type": null, "event": "complete", "run_id": "", "stage": "consolidate_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.379133+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "compare_catalog_products", "status": "started", "timestamp": "2026-08-30T01:02:31.379889+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,379 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "compare_catalog_products", "status": "started", "timestamp": "2026-08-30T01:02:31.379889+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,381 observability {"duration_ms": 1.13, "error_type": null, "event": "complete", "run_id": "", "stage": "compare_catalog_products", "status": "ok", "timestamp": "2026-08-30T01:02:31.381020+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 1.13, "error_type": null, "event": "complete", "run_id": "", "stage": "compare_catalog_products", "status": "ok", "timestamp": "2026-08-30T01:02:31.381020+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,382 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "recommend", "status": "started", "timestamp": "2026-08-30T01:02:31.381968+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "recommend", "status": "started", "timestamp": "2026-08-30T01:02:31.381968+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,382 observability {"duration_ms": 0.85, "error_type": null, "event": "complete", "run_id": "", "stage": "recommend", "status": "ok", "timestamp": "2026-08-30T01:02:31.382814+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.85, "error_type": null, "event": "complete", "run_id": "", "stage": "recommend", "status": "ok", "timestamp": "2026-08-30T01:02:31.382814+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,383 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "report", "status": "started", "timestamp": "2026-08-30T01:02:31.383500+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "report", "status": "started", "timestamp": "2026-08-30T01:02:31.383500+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,384 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "tool.gerar_relatorio", "status": "started", "timestamp": "2026-08-30T01:02:31.384454+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,384 observability {"duration_ms": 0.16, "error_type": null, "event": "complete", "run_id": "", "stage": "tool.gerar_relatorio", "status": "ok", "timestamp": "2026-08-30T01:02:31.384613+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "tool.gerar_relatorio", "status": "started", "timestamp": "2026-08-30T01:02:31.384454+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.16, "error_type": null, "event": "complete", "run_id": "", "stage": "tool.gerar_relatorio", "status": "ok", "timestamp": "2026-08-30T01:02:31.384613+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,384 observability {"duration_ms": 1.32, "error_type": null, "event": "complete", "run_id": "", "stage": "report", "status": "ok", "timestamp": "2026-08-30T01:02:31.384818+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 1.32, "error_type": null, "event": "complete", "run_id": "", "stage": "report", "status": "ok", "timestamp": "2026-08-30T01:02:31.384818+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "respond", "status": "started", "timestamp": "2026-08-30T01:02:31.385224+00:00", "trace_id": ""}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.15, "error_type": null, "event": "complete", "run_id": "", "stage": "respond", "status": "ok", "timestamp": "2026-08-30T01:02:31.385376+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,385 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "", "stage": "respond", "status": "started", "timestamp": "2026-08-30T01:02:31.385224+00:00", "trace_id": ""}
+INFO 2026-08-29 20:02:31,385 observability {"duration_ms": 0.15, "error_type": null, "event": "complete", "run_id": "", "stage": "respond", "status": "ok", "timestamp": "2026-08-30T01:02:31.385376+00:00", "trace_id": ""}
+PASSED
+chat/tests/test_agent_graph.py::test_complete_flow_records_correlated_stages INFO 2026-08-29 20:02:31,392 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "classify_msg", "status": "started", "timestamp": "2026-08-30T01:02:31.392149+00:00", "trace_id": "trace-graph"}
+
+-------------------------------- live log call ---------------------------------
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "classify_msg", "status": "started", "timestamp": "2026-08-30T01:02:31.392149+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,392 observability {"duration_ms": 0.3, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "classify_msg", "status": "ok", "timestamp": "2026-08-30T01:02:31.392444+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.3, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "classify_msg", "status": "ok", "timestamp": "2026-08-30T01:02:31.392444+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,392 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "gather_needs", "status": "started", "timestamp": "2026-08-30T01:02:31.392907+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "gather_needs", "status": "started", "timestamp": "2026-08-30T01:02:31.392907+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.21, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "gather_needs", "status": "ok", "timestamp": "2026-08-30T01:02:31.393120+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,393 observability {"duration_ms": 0.21, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "gather_needs", "status": "ok", "timestamp": "2026-08-30T01:02:31.393120+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,393 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "prepare_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.393512+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "prepare_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.393512+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.13, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "prepare_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.393645+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,393 observability {"duration_ms": 0.13, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "prepare_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.393645+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,394 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.394305+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.394305+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,394 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.394704+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,395 nodes CATALOG branch=notebook status=ok duration_ms=0.08 count=1
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "catalog_worker", "status": "started", "timestamp": "2026-08-30T01:02:31.394704+00:00", "trace_id": "trace-graph"}
+INFO     chat.agent.nodes:nodes.py:277 CATALOG branch=notebook status=ok duration_ms=0.08 count=1
+INFO 2026-08-29 20:02:31,395 nodes CATALOG branch=desktop status=ok duration_ms=0.05 count=1
+INFO 2026-08-29 20:02:31,396 observability {"duration_ms": 1.75, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.396056+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,396 observability {"duration_ms": 1.86, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.396565+00:00", "trace_id": "trace-graph"}
+INFO     chat.agent.nodes:nodes.py:277 CATALOG branch=desktop status=ok duration_ms=0.05 count=1
+INFO     chat.observability:observability.py:80 {"duration_ms": 1.75, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.396056+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 1.86, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "catalog_worker", "status": "ok", "timestamp": "2026-08-30T01:02:31.396565+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "consolidate_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.398134+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,398 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "consolidate_catalog", "status": "started", "timestamp": "2026-08-30T01:02:31.398134+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,398 observability {"duration_ms": 0.17, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "consolidate_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.398302+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.17, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "consolidate_catalog", "status": "ok", "timestamp": "2026-08-30T01:02:31.398302+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,398 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "compare_catalog_products", "status": "started", "timestamp": "2026-08-30T01:02:31.398755+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "compare_catalog_products", "status": "started", "timestamp": "2026-08-30T01:02:31.398755+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.79, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "compare_catalog_products", "status": "ok", "timestamp": "2026-08-30T01:02:31.399543+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,399 observability {"duration_ms": 0.79, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "compare_catalog_products", "status": "ok", "timestamp": "2026-08-30T01:02:31.399543+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,400 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "recommend", "status": "started", "timestamp": "2026-08-30T01:02:31.400027+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "recommend", "status": "started", "timestamp": "2026-08-30T01:02:31.400027+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.2, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "recommend", "status": "ok", "timestamp": "2026-08-30T01:02:31.400226+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,400 observability {"duration_ms": 0.2, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "recommend", "status": "ok", "timestamp": "2026-08-30T01:02:31.400226+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,400 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "report", "status": "started", "timestamp": "2026-08-30T01:02:31.400658+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "report", "status": "started", "timestamp": "2026-08-30T01:02:31.400658+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,401 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "tool.gerar_relatorio", "status": "started", "timestamp": "2026-08-30T01:02:31.401281+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "tool.gerar_relatorio", "status": "started", "timestamp": "2026-08-30T01:02:31.401281+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.24, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "tool.gerar_relatorio", "status": "ok", "timestamp": "2026-08-30T01:02:31.401520+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,401 observability {"duration_ms": 0.24, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "tool.gerar_relatorio", "status": "ok", "timestamp": "2026-08-30T01:02:31.401520+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 1.05, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "report", "status": "ok", "timestamp": "2026-08-30T01:02:31.401707+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,401 observability {"duration_ms": 1.05, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "report", "status": "ok", "timestamp": "2026-08-30T01:02:31.401707+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,402 observability {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "respond", "status": "started", "timestamp": "2026-08-30T01:02:31.402314+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.0, "error_type": null, "event": "start", "run_id": "run-graph", "stage": "respond", "status": "started", "timestamp": "2026-08-30T01:02:31.402314+00:00", "trace_id": "trace-graph"}
+INFO 2026-08-29 20:02:31,402 observability {"duration_ms": 0.28, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "respond", "status": "ok", "timestamp": "2026-08-30T01:02:31.402596+00:00", "trace_id": "trace-graph"}
+INFO     chat.observability:observability.py:80 {"duration_ms": 0.28, "error_type": null, "event": "complete", "run_id": "run-graph", "stage": "respond", "status": "ok", "timestamp": "2026-08-30T01:02:31.402596+00:00", "trace_id": "trace-graph"}
+PASSED
+chat/tests/test_agent_graph.py::test_routes_gathering_by_required_needs PASSED
+chat/tests/test_agent_graph.py::test_fan_out_creates_catalog_branches PASSED
+chat/tests/test_agent_graph.py::test_fan_in_consolidates_products_and_errors PASSED
+chat/tests/test_agent_graph.py::test_catalog_worker_keeps_partial_failure_as_result INFO 2026-08-29 20:02:31,408 nodes CATALOG branch=desktop status=error duration_ms=0.03 count=0
+
+-------------------------------- live log call ---------------------------------
+INFO     chat.agent.nodes:nodes.py:277 CATALOG branch=desktop status=error duration_ms=0.03 count=0
+PASSED
+chat/tests/test_agent_graph.py::test_gather_needs_preserves_existing_user_needs PASSED
+
+============================== 9 passed in 0.37s ===============================

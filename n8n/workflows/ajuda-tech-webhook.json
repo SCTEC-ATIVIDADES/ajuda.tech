@@ -18,7 +18,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\nconst input = $json.body ?? $json;\nconst { event_id: eventId, message } = input;\nif (typeof eventId !== 'string' || !eventId.trim() || typeof message !== 'string' || !message.trim()) {\n  throw new Error('event_id and message are required');\n}\nconst payload = { event_id: eventId.trim(), message: message.trim() };\nconst secret = $env.AUTOMATION_WEBHOOK_SECRET;\nif (typeof secret !== 'string' || !secret) {\n  throw new Error('AUTOMATION_WEBHOOK_SECRET is required');\n}\nconst signature = crypto.createHmac('sha256', secret).update(JSON.stringify(payload)).digest('hex');\nreturn [{ json: { ...payload, signature } }];"
+        "jsCode": "const crypto = require('crypto');\nconst input = $json.body ?? $json;\nconst { event_id: eventId, message } = input;\nif (typeof eventId !== 'string' || !eventId.trim() || typeof message !== 'string' || !message.trim()) {\n  throw new Error('event_id and message are required');\n}\nconst payload = { event_id: eventId.trim(), message: message.trim() };\nconst secret = $env.AUTOMATION_WEBHOOK_SECRET;\nif (typeof secret !== 'string' || !secret) {\n  throw new Error('AUTOMATION_WEBHOOK_SECRET is required');\n}\nconst signature = crypto.createHmac('sha256', secret).update(JSON.stringify(payload)).digest('hex');\nconst browserCookie = $json.headers?.cookie;\nreturn [{ json: { ...payload, signature, browser_cookie: typeof browserCookie === 'string' ? browserCookie : '' } }];"
       },
       "id": "validate-sign",
       "name": "Validate and sign",
@@ -46,7 +46,8 @@
         "headerParameters": {
           "parameters": [
             {"name": "Content-Type", "value": "application/json"},
-            {"name": "X-Automation-Signature", "value": "={{ $json.signature }}"}
+             {"name": "X-Automation-Signature", "value": "={{ $json.signature }}"},
+             {"name": "Cookie", "value": "={{ $json.browser_cookie }}"}
           ]
         },
         "sendBody": true,

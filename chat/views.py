@@ -14,6 +14,7 @@ import logging
 import time
 from uuid import uuid4
 
+import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
@@ -299,6 +300,41 @@ class RecommendView(View):
             return JsonResponse({"error": "Não foi possível gerar recomendações."}, status=503)
 
         return JsonResponse({"products": products, "trace_id": trace_id, "run_id": run_id})
+
+
+class WebAutomationProxyView(View):
+    http_method_names = ["post"]
+
+    def post(self, request):
+        body, error = _parse_json_object(request)
+        if error:
+            return error
+        message = body.get("message")
+        if not isinstance(message, str) or not message.strip():
+            return JsonResponse({"error": "O campo 'message' é obrigatório."}, status=400)
+        message = message.strip()
+        if len(message) > _MAX_MESSAGE_SIZE:
+            return JsonResponse(
+                {"error": f"Mensagem excede limite de {_MAX_MESSAGE_SIZE} caracteres."},
+                status=413,
+            )
+        if _is_injection(message):
+            emit_event("security", "prompt_injection", "blocked")
+            return JsonResponse({"reply": _SAFE_INJECTION_RESPONSE})
+        payload = {"event_id": str(uuid4()), "message": message}
+        url = getattr(settings, "N8N_WEBHOOK_URL", "http://n8n:5678/webhook/ajuda-tech")
+        headers = {"Content-Type": "application/json"}
+        if cookie := request.headers.get("Cookie"):
+            headers["Cookie"] = cookie
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=70)
+        except requests.RequestException:
+            return JsonResponse({"error": "Automação temporariamente indisponível."}, status=503)
+        try:
+            data = response.json()
+        except ValueError:
+            return JsonResponse({"error": "Resposta inválida da automação."}, status=502)
+        return JsonResponse(data, status=response.status_code)
 
 
 @method_decorator(csrf_exempt, name="dispatch")

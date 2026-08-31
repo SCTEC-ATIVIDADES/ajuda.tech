@@ -20,7 +20,7 @@ Assistente conversacional Django que traduz necessidades de compra em recomenda�
 | Frontend sanitizado em Docker | DONE | [`chatApp.js`](chat/static/chat/js/chatApp.js) → [`evidence/006-qa-com-ia/test-results.txt`](evidence/006-qa-com-ia/test-results.txt) |
 | CI e build Docker | DONE | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) → [`evidence/007-devops-inteligente/STATUS.md`](evidence/007-devops-inteligente/STATUS.md) |
 | Automação n8n local | DONE | [`n8n/workflows/ajuda-tech-webhook.json`](n8n/workflows/ajuda-tech-webhook.json) → [`evidence/008-low-code-nocode/STATUS.md`](evidence/008-low-code-nocode/STATUS.md) |
-| Vídeo, Kanban, permissões e publicação externa | BLOCKED | Entrega externa, não necessária para execução local |
+| Vídeo, Kanban, permissões e publicação externa | BLOCKED | [`evidence/010-entrega-final/STATUS.md`](evidence/010-entrega-final/STATUS.md) |
 
 ## Arquitetura
 
@@ -130,6 +130,7 @@ Configure `AUTOMATION_WEBHOOK_SECRET` e `N8N_ENCRYPTION_KEY` no `.env` e execute
 - Spec 007: [`evidence/007-devops-inteligente/`](evidence/007-devops-inteligente/): CI, fixture, análise determinística e validação humana.
 - Spec 008: [`evidence/008-low-code-nocode/`](evidence/008-low-code-nocode/): workflow, payload sanitizado e histórico local.
 - Spec 009: [`evidence/009-readme-evidencias/`](evidence/009-readme-evidencias/): verificação documental e revisão.
+- Spec 010: [`evidence/010-entrega-final/`](evidence/010-entrega-final/): validação final, rastreabilidade e bloqueios externos.
 
 ## Limitações e decisões
 

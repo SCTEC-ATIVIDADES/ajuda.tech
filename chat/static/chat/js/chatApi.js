@@ -1,4 +1,4 @@
-export const CHAT_ENDPOINT = '/agent/send/';
+export const CHAT_ENDPOINT = '/automation/send/';
 export const NEW_CONVERSATION_ENDPOINT = '/new/';
 
 const MOCK_RESPONSE =

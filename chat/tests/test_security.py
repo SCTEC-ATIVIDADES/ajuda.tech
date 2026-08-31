@@ -44,7 +44,7 @@ def test_recommend_rejects_wrong_json_type(client):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("route", ["chat:agent_send_message", "chat:recommend"])
+@pytest.mark.parametrize("route", ["chat:agent_send_message", "chat:recommend", "chat:web_automation_proxy"])
 def test_csrf_protects_json_endpoints(route):
     client = Client(enforce_csrf_checks=True)
     response = client.post(

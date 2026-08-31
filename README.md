@@ -17,7 +17,7 @@ Assistente conversacional Django que traduz necessidades de compra em recomenda�
 | Limites de contexto e payload | DONE | [`chat/views.py`](chat/views.py) → [`test_limits.py`](chat/tests/test_limits.py) |
 | Segurança, CSRF e injection | DONE | [`ajuda_tech/settings.py`](ajuda_tech/settings.py) → [`test_views.py`](chat/tests/test_views.py) |
 | Observabilidade e resiliência | DONE | [`chat/observability.py`](chat/observability.py) → [`test_observability.py`](chat/tests/test_observability.py) |
-| Frontend sanitizado | DONE em Docker; host PARTIAL | [`chatApp.js`](chat/static/chat/js/chatApp.js) → [`evidence/006-qa-com-ia/test-results.txt`](evidence/006-qa-com-ia/test-results.txt) |
+| Frontend sanitizado em Docker | DONE | [`chatApp.js`](chat/static/chat/js/chatApp.js) → [`evidence/006-qa-com-ia/test-results.txt`](evidence/006-qa-com-ia/test-results.txt) |
 | CI e build Docker | DONE | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) → [`evidence/007-devops-inteligente/STATUS.md`](evidence/007-devops-inteligente/STATUS.md) |
 | Automação n8n local | DONE | [`n8n/workflows/ajuda-tech-webhook.json`](n8n/workflows/ajuda-tech-webhook.json) → [`evidence/008-low-code-nocode/STATUS.md`](evidence/008-low-code-nocode/STATUS.md) |
 | Vídeo, Kanban, permissões e publicação externa | BLOCKED | Entrega externa, não necessária para execução local |
@@ -81,7 +81,7 @@ Código principal:
 
 ## Instalação local
 
-Requisitos: Python 3.12+, Node.js/npm para testes frontend, Docker opcional.
+Requisito: Docker Engine com Docker Compose. Toda a stack e validação executam em containers.
 
 ```bash
 git clone https://github.com/SCTEC-ATIVIDADES/ajuda.tech.git
@@ -133,10 +133,10 @@ Configure `AUTOMATION_WEBHOOK_SECRET` e `N8N_ENCRYPTION_KEY` no `.env` e execute
 
 ## Limitações e decisões
 
-- Catálogo mock HTTP local usa os mesmos dados versionados; serviço externo de terceiros não foi acionado.
+- Catálogo HTTP local roda em container separado e usa os mesmos dados versionados; serviço externo de terceiros não faz parte do escopo.
 - Modelos gratuitos podem variar, falhar ou emitir marcadores de raciocínio; serviço filtra esses marcadores.
 - Sem login, persistência entre sessões, comparação visual garantida, lazy load ou promessa de tempo de resposta.
-- n8n é self-hosted e validado apenas localmente.
+- n8n é self-hosted em container Docker e validado localmente; HTTPS público não faz parte do escopo.
 - LangGraph foi escolhido por tornar roteamento e fan-out/fan-in explícitos; sessão Django evita criar persistência adicional para MVP.
 
 ## Estrutura

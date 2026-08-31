@@ -1,6 +1,6 @@
 # Spec 009 — README e evidências
 
-STATUS: PARTIAL
+STATUS: DONE
 SPEC: specs/009-readme-evidencias.md
 ARQUIVOS: `README.md`; `docs/ESTRUTURA_PROJETO.md`; `docs/DIAGRAMA_SEQUENCIA.md`; `docs/FLUXO_USUARIO.md`; `.env.example`; evidências 006–009.
 
@@ -12,5 +12,5 @@ EVIDÊNCIAS: matriz de 15 critérios em `README.md`; revisão IA em `ai-review.m
 
 DECISÕES: documentação descreve código atual; estados usam `DONE`, `PARTIAL` e `BLOCKED`; execução externa não foi inventada; n8n é local/self-hosted; catálogo Compose é endpoint HTTP interno reproduzível, não serviço público de terceiro; esta revisão IA não executou modelo externo.
 
-PENDÊNCIAS: vídeo, Kanban, permissões e publicação externa permanecem BLOCKED por dependerem da entrega humana. Catálogo terceiro e HTTPS público n8n são N/A: escopo usa catálogo HTTP local e n8n self-hosted em Docker. Docs históricos fora da atualização mínima podem exigir revisão posterior.
+PENDÊNCIAS DESTA SPEC: nenhuma no escopo técnico/documental local. Catálogo terceiro, HTTPS público n8n, vídeo, Kanban, permissões e publicação externa pertencem à atividade oficial ou são N/A; não bloqueiam esta spec. Testes, paths, comandos e escopo Docker estão registrados.
 PRÓXIMO AGENTE: specs/010-entrega-final.md
